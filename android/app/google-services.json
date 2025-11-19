@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "722364756276",
+    "project_id": "noor-al-tariq-fdc14",
+    "storage_bucket": "noor-al-tariq-fdc14.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:722364756276:android:73d5024efe2f1d62213561",
+        "android_client_info": {
+          "package_name": "com.example.noor_al_tariq"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD01eRsdWwbp6Ssv_jiWHGaWDQf123S73Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
