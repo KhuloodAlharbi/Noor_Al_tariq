@@ -1,6 +1,14 @@
+// =============================================================================
+// FILE: role_selection_page.dart
+// DESCRIPTION: Role selection page - MODIFIED for new volunteer flow
+// CHANGES: 
+//   - Both roles now go to AuthPage first (volunteer no longer skips auth)
+//   - Removed direct navigation to VolunteerRequestPage
+//   - Added visual distinction for the two paths
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'auth_page.dart';
-import 'volunteer_request_page.dart';
 
 class RoleSelectionPage extends StatelessWidget {
   const RoleSelectionPage({super.key});
@@ -25,8 +33,9 @@ class RoleSelectionPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Arabic greeting
             const Text(
-              'السلام  عليكم',
+              'السلام عليكم',
               style: TextStyle(
                 fontSize: 20,
                 color: Colors.white70,
@@ -54,6 +63,7 @@ class RoleSelectionPage extends StatelessWidget {
             Expanded(
               child: Column(
                 children: [
+                  // HAJJ PERFORMER CARD
                   _RoleCard(
                     title: 'Hajj Performer',
                     subtitle: 'Navigation, duas, help requests and more.',
@@ -61,32 +71,52 @@ class RoleSelectionPage extends StatelessWidget {
                     accent: accent,
                     cardColor: cardColor,
                     onTap: () {
+                      // Navigate to auth page for hajj performer
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) =>
-                              const AuthPage(role: 'hajj_performer'),
+                          builder: (_) => const AuthPage(role: 'hajj_performer'),
                         ),
                       );
                     },
                   ),
                   const SizedBox(height: 16),
+
+                  // VOLUNTEER CARD - MODIFIED: Now goes to AuthPage first
                   _RoleCard(
                     title: 'Volunteer',
-                    subtitle: 'Assist pilgrims, respond to requests, chat.',
+                    subtitle: 'Sign up to assist pilgrims after approval.',
                     icon: Icons.volunteer_activism_rounded,
                     accent: accent,
                     cardColor: cardColor,
+                    // NEW: Show badge indicating approval required
+                    badge: 'Approval Required',
                     onTap: () {
+                      // MODIFIED: Navigate to auth page first, then application form
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const VolunteerRequestPage(),
+                          builder: (_) => const AuthPage(role: 'volunteer'),
                         ),
                       );
                     },
                   ),
                 ],
+              ),
+            ),
+            
+            // Footer info
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Text(
+                  'Volunteers require admin approval before access.',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.5),
+                    fontSize: 12,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
           ],
@@ -96,6 +126,9 @@ class RoleSelectionPage extends StatelessWidget {
   }
 }
 
+// =============================================================================
+// MODIFIED: _RoleCard widget with optional badge
+// =============================================================================
 class _RoleCard extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -103,6 +136,7 @@ class _RoleCard extends StatelessWidget {
   final Color accent;
   final Color cardColor;
   final VoidCallback onTap;
+  final String? badge; // NEW: Optional badge text
 
   const _RoleCard({
     required this.title,
@@ -111,6 +145,7 @@ class _RoleCard extends StatelessWidget {
     required this.accent,
     required this.cardColor,
     required this.onTap,
+    this.badge, // NEW
   });
 
   @override
@@ -135,6 +170,7 @@ class _RoleCard extends StatelessWidget {
           padding: const EdgeInsets.all(18.0),
           child: Row(
             children: [
+              // Icon container
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -144,17 +180,50 @@ class _RoleCard extends StatelessWidget {
                 child: Icon(icon, color: accent, size: 26),
               ),
               const SizedBox(width: 16),
+
+              // Title and subtitle
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
+                    // Title row with optional badge
+                    Row(
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                        // NEW: Badge for volunteer
+                        if (badge != null) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: accent.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: accent.withOpacity(0.5),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              badge!,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                                color: accent,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -167,6 +236,8 @@ class _RoleCard extends StatelessWidget {
                   ],
                 ),
               ),
+
+              // Arrow icon
               const Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 16,

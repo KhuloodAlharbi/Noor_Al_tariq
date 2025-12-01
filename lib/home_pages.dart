@@ -1,12 +1,21 @@
-import 'dart:async';
+// =============================================================================
+// FILE: home_pages.dart
+// DESCRIPTION: Home pages for both Hajj Performers and Volunteers
+// MERGED: Original Hajj home UI + New Volunteer home with bottom nav
+// =============================================================================
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:adhan_dart/adhan_dart.dart';
 import 'package:intl/intl.dart';
+
 import 'role_selection_page.dart';
 
+// =============================================================================
+// HAJJ PERFORMER HOME PAGE
+// =============================================================================
 class HajjHomePage extends StatefulWidget {
   const HajjHomePage({super.key});
 
@@ -40,7 +49,7 @@ class _HajjHomePageState extends State<HajjHomePage> {
     super.dispose();
   }
 
-  //  USER PROFILE
+  // USER PROFILE
   Future<void> _loadUserProfile() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -58,11 +67,11 @@ class _HajjHomePageState extends State<HajjHomePage> {
     });
   }
 
-  //PRAYER TIMES (adhan_dart)
+  // PRAYER TIMES (adhan_dart)
   void _calculatePrayerTimes() {
     // Makkah coordinates
     const coordinates = Coordinates(21.3891, 39.8579);
-    final now = DateTime.now(); // local time on the device
+    final now = DateTime.now();
 
     // adhan_dart parameters
     CalculationParameters params =
@@ -89,7 +98,7 @@ class _HajjHomePageState extends State<HajjHomePage> {
       return;
     }
 
-    // ✅ Convert to device local time (for you = Asia/Riyadh, UTC+3)
+    // Convert to device local time
     final DateTime localNextTime = nextUtcTime.toLocal();
 
     // Map enum to display name
@@ -155,7 +164,7 @@ class _HajjHomePageState extends State<HajjHomePage> {
     }
   }
 
-  //  NAV BAR
+  // NAV BAR
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -182,7 +191,7 @@ class _HajjHomePageState extends State<HajjHomePage> {
       const _PlaceholderTab(title: 'Prayers / Rituals'),
       const _ChatbotTab(),
       const _PlaceholderTab(title: 'Map'),
-      _SettingsTab(),
+      const _HajjSettingsTab(),
     ];
 
     return Scaffold(
@@ -220,14 +229,14 @@ class _HajjHomePageState extends State<HajjHomePage> {
   }
 }
 
-///  HOME TAB
-
+// =============================================================================
+// HOME TAB (Hajj Performer)
+// =============================================================================
 class _HomeTab extends StatelessWidget {
   final Color accent;
   final Color cardColor;
   final String? userName;
   final String? userEmail;
-
   final String? nextPrayerName;
   final DateTime? nextPrayerTime;
   final String? timeRemainingText;
@@ -271,9 +280,9 @@ class _HomeTab extends StatelessWidget {
           // Daily Dua
           _SectionCard(
             cardColor: cardColor,
-            child: Column(
+            child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
                   'Daily Dua',
                   style: TextStyle(
@@ -284,8 +293,8 @@ class _HomeTab extends StatelessWidget {
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً '
-                  'وَفِي الآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ',
+                  'رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً '
+                  'وَفِي الآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ',
                   textAlign: TextAlign.right,
                   style: TextStyle(color: Colors.white, fontSize: 14),
                 ),
@@ -319,10 +328,10 @@ class _HomeTab extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Expanded(
+                const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Text(
                         'Current Ritual',
                         style: TextStyle(color: Colors.white70, fontSize: 13),
@@ -378,7 +387,7 @@ class _HomeTab extends StatelessWidget {
                 const SizedBox(width: 12),
                 Container(
                   decoration: BoxDecoration(
-                    color: Color(0xFFF6B733),
+                    color: const Color(0xFFF6B733),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: IconButton(
@@ -387,7 +396,7 @@ class _HomeTab extends StatelessWidget {
                       color: Colors.black,
                     ),
                     onPressed: () {
-                      // Later: programmatically switch to chatbot tab if you want
+                      // Later: programmatically switch to chatbot tab
                     },
                   ),
                 ),
@@ -400,6 +409,9 @@ class _HomeTab extends StatelessWidget {
   }
 }
 
+// =============================================================================
+// NEXT PRAYER CONTENT
+// =============================================================================
 class _NextPrayerContent extends StatelessWidget {
   final String? nextPrayerName;
   final DateTime? nextPrayerTime;
@@ -467,6 +479,9 @@ class _NextPrayerContent extends StatelessWidget {
   }
 }
 
+// =============================================================================
+// TOP HEADER CARD
+// =============================================================================
 class _TopHeaderCard extends StatelessWidget {
   final Color accent;
   final Color cardColor;
@@ -570,6 +585,9 @@ class _TopHeaderCard extends StatelessWidget {
   }
 }
 
+// =============================================================================
+// SECTION CARD
+// =============================================================================
 class _SectionCard extends StatelessWidget {
   final Widget child;
   final Color cardColor;
@@ -590,8 +608,9 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-///  CHATBOT TAB
-
+// =============================================================================
+// CHATBOT TAB
+// =============================================================================
 class _ChatbotTab extends StatefulWidget {
   const _ChatbotTab();
 
@@ -641,9 +660,9 @@ class _ChatbotTabState extends State<_ChatbotTab> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               color: background,
-              child: Row(
+              child: const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
+                children: [
                   Text(
                     'AI Assistant',
                     style: TextStyle(
@@ -838,6 +857,9 @@ class _SuggestionChip extends StatelessWidget {
   }
 }
 
+// =============================================================================
+// PLACEHOLDER TAB
+// =============================================================================
 class _PlaceholderTab extends StatelessWidget {
   final String title;
 
@@ -855,41 +877,11 @@ class _PlaceholderTab extends StatelessWidget {
   }
 }
 
-///  VOLUNTEER HOME
-class VolunteerHomePage extends StatelessWidget {
-  const VolunteerHomePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Noor Al-Tariq • Volunteer')),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Volunteer Home (placeholder)',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Here you will later add help requests,\nchat with pilgrims, etc.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white.withOpacity(0.7)),
-            ),
-            const SizedBox(height: 24),
-            Icon(Icons.volunteer_activism_rounded, size: 48, color: accent),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SettingsTab extends StatelessWidget {
-  const _SettingsTab({super.key});
+// =============================================================================
+// HAJJ SETTINGS TAB
+// =============================================================================
+class _HajjSettingsTab extends StatelessWidget {
+  const _HajjSettingsTab();
 
   @override
   Widget build(BuildContext context) {
@@ -920,14 +912,461 @@ class _SettingsTab extends StatelessWidget {
                 ),
                 onTap: () async {
                   await FirebaseAuth.instance.signOut();
-
+                  if (!context.mounted) return;
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const RoleSelectionPage(), // or AuthPage
+                      builder: (_) => const RoleSelectionPage(),
                     ),
                   );
                 },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// VOLUNTEER HOME PAGE
+// =============================================================================
+class VolunteerHomePage extends StatefulWidget {
+  const VolunteerHomePage({super.key});
+
+  @override
+  State<VolunteerHomePage> createState() => _VolunteerHomePageState();
+}
+
+class _VolunteerHomePageState extends State<VolunteerHomePage> {
+  int _selectedIndex = 0;
+  String? _volunteerName;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVolunteerProfile();
+  }
+
+  Future<void> _loadVolunteerProfile() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    if (doc.exists) {
+      setState(() {
+        _volunteerName = doc.data()?['name'] as String?;
+      });
+    }
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const background = Color(0xFF050608);
+    const bottomBarColor = Color(0xFF121317);
+    const accent = Color(0xFFF6B733);
+
+    final pages = <Widget>[
+      _VolunteerHomeTab(volunteerName: _volunteerName),
+      const _PlaceholderTab(title: 'Help Requests'),
+      const _PlaceholderTab(title: 'Chat'),
+      const _PlaceholderTab(title: 'Map'),
+      const _VolunteerSettingsTab(),
+    ];
+
+    return Scaffold(
+      backgroundColor: background,
+      body: SafeArea(child: pages[_selectedIndex]),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: bottomBarColor,
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        selectedItemColor: accent,
+        unselectedItemColor: Colors.white70,
+        showUnselectedLabels: true,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_rounded),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.assignment_rounded),
+            label: 'Requests',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat_bubble_rounded),
+            label: 'Chat',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map_rounded),
+            label: 'Map',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings_rounded),
+            label: 'Settings',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// VOLUNTEER HOME TAB
+// =============================================================================
+class _VolunteerHomeTab extends StatelessWidget {
+  final String? volunteerName;
+
+  const _VolunteerHomeTab({this.volunteerName});
+
+  @override
+  Widget build(BuildContext context) {
+    const cardColor = Color(0xFF17191E);
+    const accent = Color(0xFFF6B733);
+
+    final displayName = volunteerName ?? 'Volunteer';
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Welcome card
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor: accent.withOpacity(0.2),
+                      child: Icon(
+                        Icons.volunteer_activism_rounded,
+                        color: accent,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Noor Al-Tariq',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Welcome, $displayName',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.circle,
+                            color: Colors.green,
+                            size: 8,
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            'Active',
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Stats row
+          Row(
+            children: [
+              Expanded(
+                child: _StatCard(
+                  icon: Icons.people_rounded,
+                  label: 'Pilgrims Helped',
+                  value: '0',
+                  color: accent,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  icon: Icons.check_circle_rounded,
+                  label: 'Requests Completed',
+                  value: '0',
+                  color: Colors.green,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          // Active requests section
+          const Text(
+            'Active Requests',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.inbox_rounded,
+                  size: 48,
+                  color: Colors.white.withOpacity(0.3),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'No active requests',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.5),
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Help requests from pilgrims will appear here',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.3),
+                    fontSize: 12,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// STAT CARD
+// =============================================================================
+class _StatCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  const _StatCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const cardColor = Color(0xFF17191E);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.6),
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// VOLUNTEER SETTINGS TAB
+// =============================================================================
+class _VolunteerSettingsTab extends StatefulWidget {
+  const _VolunteerSettingsTab();
+
+  @override
+  State<_VolunteerSettingsTab> createState() => _VolunteerSettingsTabState();
+}
+
+class _VolunteerSettingsTabState extends State<_VolunteerSettingsTab> {
+  bool _isAvailable = true;
+
+  @override
+  Widget build(BuildContext context) {
+    const cardColor = Color(0xFF17191E);
+    const accent = Color(0xFFF6B733);
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF050608),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Settings',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Availability toggle
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.schedule_rounded,
+                      color: accent,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 16),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Availability',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Toggle to receive help requests',
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: _isAvailable,
+                      onChanged: (value) {
+                        setState(() {
+                          _isAvailable = value;
+                        });
+                      },
+                      activeColor: accent,
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Logout button
+              Container(
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: ListTile(
+                  leading: const Icon(Icons.logout, color: Colors.redAccent),
+                  title: const Text(
+                    'Log Out',
+                    style: TextStyle(color: Colors.redAccent, fontSize: 16),
+                  ),
+                  onTap: () async {
+                    await FirebaseAuth.instance.signOut();
+                    if (!context.mounted) return;
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const RoleSelectionPage(),
+                      ),
+                    );
+                  },
+                ),
               ),
             ],
           ),

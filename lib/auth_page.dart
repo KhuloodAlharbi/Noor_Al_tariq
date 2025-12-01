@@ -1,8 +1,20 @@
+// =============================================================================
+// FILE: auth_page.dart
+// DESCRIPTION: Authentication page - MODIFIED for new volunteer flow
+// CHANGES:
+//   - After volunteer signup/login, redirect to VolunteerApplicationPage
+//   - Check if volunteer already has application submitted
+//   - Handle pending/approved/declined states
+//   - Added _checkVolunteerStatusAndNavigate() method
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'home_pages.dart';
+import 'volunteer_application_page.dart';
+import 'pending_approval_page.dart';
 
 class AuthPage extends StatefulWidget {
   final String role; // 'hajj_performer' or 'volunteer'
@@ -14,7 +26,7 @@ class AuthPage extends StatefulWidget {
 }
 
 class _AuthPageState extends State<AuthPage> {
-  // Start in SIGN UP mode (for Hajj)
+  // Start in SIGN UP mode
   bool _isLogin = false;
 
   final _formKey = GlobalKey<FormState>();
@@ -69,7 +81,9 @@ class _AuthPageState extends State<AuthPage> {
     });
   }
 
-  // LOGIN
+  // =========================================================================
+  // LOGIN - MODIFIED to handle volunteer flow
+  // =========================================================================
   Future<void> _login() async {
     try {
       setState(() {
@@ -77,7 +91,7 @@ class _AuthPageState extends State<AuthPage> {
         _errorMessage = null;
       });
 
-      // 1) To Sign in with Firebase Auth
+      // 1) Sign in with Firebase Auth
       final cred = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
@@ -92,11 +106,12 @@ class _AuthPageState extends State<AuthPage> {
       String role;
 
       if (!doc.exists) {
-        // First time: create Firestore profile
+        // First time: create Firestore profile with selected role
         role = widget.role;
         await docRef.set({
           'email': _emailController.text.trim(),
           'role': role,
+          'isVolunteer': false, // NEW: Default to false
           'createdAt': FieldValue.serverTimestamp(),
         });
       } else {
@@ -104,13 +119,18 @@ class _AuthPageState extends State<AuthPage> {
         final existingRole = data?['role'] as String?;
         if (existingRole == null) {
           role = widget.role;
-          await docRef.set({'role': role}, SetOptions(merge: true));
+          await docRef.update({
+            'role': role,
+            'isVolunteer': false,
+          });
         } else {
           role = existingRole;
         }
       }
 
-      _goToHomeByRole(role);
+      // 3) Navigate based on role
+      await _navigateByRole(role, uid);
+      
     } on FirebaseAuthException catch (e) {
       setState(() {
         _errorMessage =
@@ -130,7 +150,9 @@ class _AuthPageState extends State<AuthPage> {
     }
   }
 
-  // SIGNUP
+  // =========================================================================
+  // SIGNUP - MODIFIED to handle volunteer flow
+  // =========================================================================
   Future<void> _signup() async {
     if (_passwordController.text != _confirmPasswordController.text) {
       setState(() {
@@ -158,11 +180,13 @@ class _AuthPageState extends State<AuthPage> {
         'name': _nameController.text.trim(),
         'email': _emailController.text.trim(),
         'role': widget.role,
+        'isVolunteer': false, // NEW: Default to false until approved
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      // 3) Go directly to home
-      _goToHomeByRole(widget.role);
+      // 3) Navigate based on role
+      await _navigateByRole(widget.role, uid);
+      
     } on FirebaseAuthException catch (e) {
       setState(() {
         _errorMessage = e.message ?? 'Something went wrong during sign up.';
@@ -181,21 +205,87 @@ class _AuthPageState extends State<AuthPage> {
     }
   }
 
-  // NAVIGATION
-  void _goToHomeByRole(String role) {
+  // =========================================================================
+  // NEW: Navigate based on role - handles volunteer application flow
+  // =========================================================================
+  Future<void> _navigateByRole(String role, String uid) async {
     Widget page;
+
     if (role == 'hajj_performer') {
+      // Hajj performer - go directly to home
       page = const HajjHomePage();
     } else if (role == 'volunteer') {
-      page = const VolunteerHomePage();
+      // MODIFIED: Check volunteer application status
+      page = await _checkVolunteerStatusAndGetPage(uid);
     } else {
+      // Unknown role - default to Hajj home
       page = const HajjHomePage();
     }
 
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => page));
+    if (!mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => page),
+    );
   }
 
-  // UI
+  // =========================================================================
+  // NEW: Check volunteer application status and return appropriate page
+  // =========================================================================
+  Future<Widget> _checkVolunteerStatusAndGetPage(String uid) async {
+    final firestore = FirebaseFirestore.instance;
+
+    // Check if user is already an approved volunteer
+    final userDoc = await firestore.collection('users').doc(uid).get();
+    final userData = userDoc.data();
+    final isVolunteer = userData?['isVolunteer'] as bool? ?? false;
+
+    if (isVolunteer) {
+      // Already approved - go to volunteer home
+      return const VolunteerHomePage();
+    }
+
+    // Check for existing application
+    final appDoc = await firestore
+        .collection('volunteer_applications')
+        .doc(uid)
+        .get();
+
+    if (!appDoc.exists) {
+      // No application yet - redirect to application form
+      return const VolunteerApplicationPage();
+    }
+
+    final appData = appDoc.data()!;
+    final status = appData['status'] as String?;
+
+    switch (status) {
+      case 'approved':
+        // This shouldn't happen if isVolunteer is properly set
+        // Update the user doc and go to volunteer home
+        await firestore.collection('users').doc(uid).update({
+          'isVolunteer': true,
+        });
+        return const VolunteerHomePage();
+
+      case 'declined':
+        // Show declined page with reason and option to reapply
+        return PendingApprovalPage(
+          status: 'declined',
+          declineReason: appData['declineReason'] as String?,
+        );
+
+      case 'pending':
+      default:
+        // Show pending approval page
+        return const PendingApprovalPage(status: 'pending');
+    }
+  }
+
+  // =========================================================================
+  // UI - Same as before with minor text updates
+  // =========================================================================
   @override
   Widget build(BuildContext context) {
     final cardColor = Theme.of(context).colorScheme.surface;
@@ -256,11 +346,47 @@ class _AuthPageState extends State<AuthPage> {
                           'Using your Noor Al-Tariq account',
                           style: TextStyle(
                             fontSize: 13,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withOpacity(0.65),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.65),
                           ),
                         ),
+
+                        // NEW: Info for volunteers
+                        if (widget.role == 'volunteer') ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: accent.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: accent.withOpacity(0.3),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.info_outline,
+                                  color: accent,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'After signing up, you\'ll complete an application form for admin review.',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.white.withOpacity(0.8),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+
                         const SizedBox(height: 24),
 
                         // Error message
@@ -291,7 +417,7 @@ class _AuthPageState extends State<AuthPage> {
                           key: _formKey,
                           child: Column(
                             children: [
-                              //  Full Name only in Sign Up mode
+                              // Full Name only in Sign Up mode
                               if (!_isLogin) ...[
                                 TextFormField(
                                   controller: _nameController,
@@ -328,6 +454,7 @@ class _AuthPageState extends State<AuthPage> {
                                 },
                               ),
                               const SizedBox(height: 16),
+
                               TextFormField(
                                 controller: _passwordController,
                                 obscureText: true,
@@ -345,6 +472,7 @@ class _AuthPageState extends State<AuthPage> {
                                   return null;
                                 },
                               ),
+
                               if (!_isLogin) ...[
                                 const SizedBox(height: 16),
                                 TextFormField(
@@ -366,7 +494,9 @@ class _AuthPageState extends State<AuthPage> {
                                   },
                                 ),
                               ],
+
                               const SizedBox(height: 24),
+
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton(
@@ -398,7 +528,9 @@ class _AuthPageState extends State<AuthPage> {
                                         ),
                                 ),
                               ),
+
                               const SizedBox(height: 12),
+
                               TextButton(
                                 onPressed: _isLoading ? null : _toggleMode,
                                 child: Text(
