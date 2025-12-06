@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'package:noor_al_tariq/api/api_service.dart';
+
+
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -592,40 +595,49 @@ class _SectionCard extends StatelessWidget {
 
 ///  CHATBOT TAB
 
+///  CHATBOT TAB
+
 class _ChatbotTab extends StatefulWidget {
   const _ChatbotTab();
 
   @override
   State<_ChatbotTab> createState() => _ChatbotTabState();
 }
-
 class _ChatbotTabState extends State<_ChatbotTab> {
   final TextEditingController _controller = TextEditingController();
+  ApiService api = ApiService();
 
   final List<_ChatMessage> _messages = [
     const _ChatMessage(
       fromUser: false,
-      text:
-          'As-salamu alaykum. I am your personal Hajj companion. How may I assist you today?',
-    ),
-    const _ChatMessage(fromUser: true, text: 'What is the next ritual?'),
-    const _ChatMessage(
-      fromUser: false,
-      text:
-          'The next ritual is Tawaf al-Ifadah. It is a mandatory part of Hajj.',
+      text: 'As-salamu alaykum. I am your personal Hajj companion. How may I assist you today?',
     ),
   ];
 
-  void _sendMessage() {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
+  void _sendMessage() async {
+  final text = _controller.text.trim();
+  if (text.isEmpty) return;
 
-    setState(() {
-      _messages.add(_ChatMessage(fromUser: true, text: text));
-      _controller.clear();
-      // Later we should call the chatbot API here and add a reply
-    });
-  }
+  print("🟢 Sending: $text");
+
+  // Add user message ONLY ONCE
+  setState(() {
+    _messages.add(_ChatMessage(fromUser: true, text: text));
+    _controller.clear();
+  });
+
+  // Call backend
+  final reply = await api.askChatbot(text);
+
+  print("🟣 Chatbot reply received: $reply");
+
+  // Add bot message
+  setState(() {
+    _messages.add(_ChatMessage(fromUser: false, text: reply));
+  });
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -706,53 +718,6 @@ class _ChatbotTabState extends State<_ChatbotTab> {
                         },
                       ),
                     ),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        children: [
-                          _SuggestionChip(
-                            label: 'What is the next ritual?',
-                            onTap: () {
-                              setState(() {
-                                _messages.add(
-                                  const _ChatMessage(
-                                    fromUser: true,
-                                    text: 'What is the next ritual?',
-                                  ),
-                                );
-                              });
-                            },
-                          ),
-                          _SuggestionChip(
-                            label: 'Prayer times',
-                            onTap: () {
-                              setState(() {
-                                _messages.add(
-                                  const _ChatMessage(
-                                    fromUser: true,
-                                    text: 'What are the prayer times?',
-                                  ),
-                                );
-                              });
-                            },
-                          ),
-                          _SuggestionChip(
-                            label: 'Where am I?',
-                            onTap: () {
-                              setState(() {
-                                _messages.add(
-                                  const _ChatMessage(
-                                    fromUser: true,
-                                    text: 'Where am I now?',
-                                  ),
-                                );
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
                     Row(
                       children: [
                         Expanded(
@@ -802,6 +767,7 @@ class _ChatbotTabState extends State<_ChatbotTab> {
     );
   }
 }
+
 
 class _ChatMessage {
   final bool fromUser;
