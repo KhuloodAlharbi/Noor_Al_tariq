@@ -43,3 +43,24 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+
+# ============================
+# MACHINE LEARNING FILES (DO NOT TRACK)
+# ============================
+noor_backend/*.npy
+noor_backend/*.parquet
+noor_backend/*.joblib
+noor_backend/models/
+
+# Also ignore any global ML artifacts
+*.npy
+*.parquet
+*.joblib
+
+# ============================
+# API KEYS / ENV FILES
+# ============================
+*.env
+.env.*
+lib/api_keys.dart
