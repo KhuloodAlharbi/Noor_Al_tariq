@@ -6,14 +6,14 @@ from sentence_transformers import SentenceTransformer
 from sklearn.neighbors import NearestNeighbors
 import google.generativeai as genai
 
-# Load saved model files
+
 df = pd.read_parquet("fatwas_clean.parquet")
 embeddings = np.load("fatwa_embeddings.npy")
 nn = joblib.load("nn_index.joblib")
 model = joblib.load("sentence_encoder.joblib")
 
-# Add your Gemini API key here
-genai.configure(api_key="AIzaSyAy6D5uFlVnje0rYroOSIQzis0y9hXHt_I")
+
+genai.configure(api_key="")
 
 
 def search_fatwas(query, top_k=3):
