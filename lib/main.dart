@@ -7,12 +7,15 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 // =============================================================================
 // IMPORTANT: After running "flutterfire configure", uncomment this line:
 // =============================================================================
 // import 'firebase_options.dart';
 
+import 'app_settings_provider.dart';
 import 'role_selection_page.dart';
 import 'home_pages.dart';
 import 'volunteer_application_page.dart';
@@ -23,9 +26,19 @@ Future<void> main() async {
   
   
   await Firebase.initializeApp();
-  // =============================================================================
-  
-  runApp(const NoorAlTariqApp());
+  await EasyLocalization.ensureInitialized();
+
+  runApp(
+    EasyLocalization(
+      supportedLocales: const [Locale('en'), Locale('ar')],
+      path: 'assets/translations', 
+      fallbackLocale: const Locale('en'),
+      child: ChangeNotifierProvider(
+        create: (_) => AppSettingsProvider(),
+        child: const NoorAlTariqApp(),
+      ),
+    ),
+  );
 }
 
 class NoorAlTariqApp extends StatelessWidget {
@@ -33,170 +46,166 @@ class NoorAlTariqApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const background = Color(0xFF050509); // very dark
-    const cardColor = Color(0xFF17171F); // dark grey
-    const accent = Color(0xFFF6B645); // warm gold
+    // Listen to settings changes (Font Size)
+    final settings = context.watch<AppSettingsProvider>();
+    final isArabic = context.locale == const Locale('ar');
+
+    const background = Color(0xFF050509);
+    const cardColor  = Color(0xFF17171F);
+    const accent     = Color(0xFFF6B645);
 
     return MaterialApp(
-      title: 'Noor Al-Tariq',
+      title: 'app_name'.tr(),
       debugShowCheckedModeBanner: false,
+      locale: context.locale,
+      supportedLocales: context.supportedLocales,
+      localizationsDelegates: context.localizationDelegates,
       theme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: background,
-        fontFamily: 'Roboto',
+        fontFamily: isArabic ? null : 'Roboto', 
         colorScheme: const ColorScheme.dark(
           primary: accent,
           secondary: accent,
           surface: cardColor,
         ),
-        appBarTheme: const AppBarTheme(
+        
+        // Apply dynamic font size to global text theme
+        textTheme: _buildTextTheme(settings.fontSize),
+        
+        appBarTheme: AppBarTheme(
           backgroundColor: background,
           elevation: 0,
           centerTitle: false,
           titleTextStyle: TextStyle(
-            fontSize: 20,
+            fontSize: settings.fontSize + 6,
             fontWeight: FontWeight.w600,
             color: Colors.white,
           ),
         ),
+
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: accent,
             foregroundColor: Colors.black,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-            textStyle: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
+            textStyle: TextStyle(
+              fontWeight: FontWeight.w600, 
+              fontSize: settings.fontSize + 2,
             ),
           ),
         ),
-        outlinedButtonTheme: OutlinedButtonThemeData(
-          style: OutlinedButton.styleFrom(
-            side: const BorderSide(color: accent, width: 1.2),
-            foregroundColor: accent,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-            textStyle: const TextStyle(
-              fontWeight: FontWeight.w500,
-              fontSize: 16,
-            ),
-          ),
-        ),
+
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: cardColor,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
+              borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: accent, width: 1.5),
-          ),
-          labelStyle: const TextStyle(color: Colors.white70),
-          hintStyle: const TextStyle(color: Colors.white38),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: accent, width: 1.5)),
+          labelStyle: TextStyle(color: Colors.white70, fontSize: settings.fontSize),
+          hintStyle: TextStyle(color: Colors.white38, fontSize: settings.fontSize),
         ),
       ),
       home: const AuthWrapper(),
     );
   }
+
+  // Build text sizes based on the base font size selected
+  TextTheme _buildTextTheme(double base) => TextTheme(
+    displayLarge:   TextStyle(fontSize: base + 22, color: Colors.white),
+    headlineMedium: TextStyle(fontSize: base + 8,  color: Colors.white, fontWeight: FontWeight.w600),
+    titleLarge:     TextStyle(fontSize: base + 4,  color: Colors.white, fontWeight: FontWeight.w600),
+    bodyLarge:      TextStyle(fontSize: base + 2,  color: Colors.white),
+    bodyMedium:     TextStyle(fontSize: base,       color: Colors.white),
+    bodySmall:      TextStyle(fontSize: base - 2,  color: Colors.white70),
+    labelLarge:     TextStyle(fontSize: base + 2,  color: Colors.white, fontWeight: FontWeight.w600),
+  );
 }
 
-// =============================================================================
-// AuthWrapper - Handles automatic routing based on auth state
-// =============================================================================
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  bool _settingsLoaded = false;
+
+  // Load user settings (Language & Font Size) from Firestore upon login
+  Future<void> _loadUserSettings(User user) async {
+    if (_settingsLoaded) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    if (doc.exists && mounted) {
+      final data = doc.data()!;
+      
+      // Update font size in app
+      final fontSize = (data['fontSize'] as num?)?.toDouble() ?? 14.0;
+      await context.read<AppSettingsProvider>().setFontSize(fontSize);
+
+      // Update language in app
+      final lang = data['language'] as String? ?? 'English';
+      final locale = lang == 'Arabic' ? const Locale('ar') : const Locale('en');
+      if (context.locale != locale) {
+        await context.setLocale(locale);
+      }
+    }
+    _settingsLoaded = true;
+  }
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        // Still loading auth state
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
 
-        // User is not logged in
         if (!snapshot.hasData || snapshot.data == null) {
+          _settingsLoaded = false;
           return const RoleSelectionPage();
         }
 
-        // User is logged in - determine where to route them
-        return FutureBuilder<Widget>(
-          future: _determineHomePage(snapshot.data!),
-          builder: (context, homeSnapshot) {
-            if (homeSnapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                body: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text(
-                        'Loading your profile...',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                    ],
-                  ),
-                ),
-              );
+        final user = snapshot.data!;
+
+        // Load settings first then determine the home page
+        return FutureBuilder<void>(
+          future: _loadUserSettings(user),
+          builder: (context, settingsSnapshot) {
+            if (settingsSnapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(body: Center(child: CircularProgressIndicator()));
             }
 
-            if (homeSnapshot.hasError) {
-              return Scaffold(
-                body: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error, color: Colors.red, size: 48),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Error: ${homeSnapshot.error}',
-                        style: const TextStyle(color: Colors.red),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () async {
-                          await FirebaseAuth.instance.signOut();
-                        },
-                        child: const Text('Sign Out'),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
-
-            return homeSnapshot.data ?? const RoleSelectionPage();
+            return FutureBuilder<Widget>(
+              future: _determineHomePage(user),
+              builder: (context, homeSnapshot) {
+                if (homeSnapshot.connectionState == ConnectionState.waiting) {
+                  return const Scaffold(body: Center(child: CircularProgressIndicator()));
+                }
+                return homeSnapshot.data ?? const RoleSelectionPage();
+              },
+            );
           },
         );
       },
     );
   }
 
-  /// Determines which page to show based on user's role and volunteer status
   Future<Widget> _determineHomePage(User user) async {
     final uid = user.uid;
     final firestore = FirebaseFirestore.instance;
-
-    // Get user document
     final userDoc = await firestore.collection('users').doc(uid).get();
 
     if (!userDoc.exists) {
-      // User exists in Auth but not in Firestore - unusual state
-      // Sign them out and let them re-register
       await FirebaseAuth.instance.signOut();
       return const RoleSelectionPage();
     }
@@ -204,58 +213,31 @@ class AuthWrapper extends StatelessWidget {
     final userData = userDoc.data()!;
     final role = userData['role'] as String?;
 
-    // HAJJ PERFORMER - go directly to home
     if (role == 'hajj_performer') {
       return const HajjHomePage();
     }
 
-    // VOLUNTEER - check application status
     if (role == 'volunteer') {
-      // Check if they have an approved volunteer application
       final isVolunteer = userData['isVolunteer'] as bool? ?? false;
+      if (isVolunteer) return const VolunteerHomePage();
 
-      if (isVolunteer) {
-        // Approved volunteer - go to volunteer home
-        return const VolunteerHomePage();
-      }
+      final appDoc = await firestore.collection('volunteer_applications').doc(uid).get();
+      if (!appDoc.exists) return const VolunteerApplicationPage();
 
-      // Check for existing application
-      final appDoc = await firestore
-          .collection('volunteer_applications')
-          .doc(uid)
-          .get();
-
-      if (!appDoc.exists) {
-        // No application yet - redirect to application form
-        return const VolunteerApplicationPage();
-      }
-
-      final appData = appDoc.data()!;
-      final status = appData['status'] as String?;
-
+      final status = appDoc.data()?['status'] as String?;
       switch (status) {
         case 'approved':
-          // This shouldn't happen if isVolunteer is properly set, but handle it
-          await firestore.collection('users').doc(uid).update({
-            'isVolunteer': true,
-          });
+          await firestore.collection('users').doc(uid).update({'isVolunteer': true});
           return const VolunteerHomePage();
-
         case 'declined':
-          // Show declined page with option to reapply
           return PendingApprovalPage(
             status: 'declined',
-            declineReason: appData['declineReason'] as String?,
+            declineReason: appDoc.data()?['declineReason'] as String?,
           );
-
-        case 'pending':
         default:
-          // Show pending page
           return const PendingApprovalPage(status: 'pending');
       }
     }
-
-    // Unknown role - go to role selection
     return const RoleSelectionPage();
   }
 }

@@ -2,6 +2,7 @@
 // FILE: home_pages.dart
 // DESCRIPTION: Home pages for both Hajj Performers and Volunteers
 // MERGED: Original Hajj home UI + New Volunteer home with bottom nav
+// CHANGES: + easy_localization (.tr()) + dynamic fontSize from AppSettingsProvider
 // =============================================================================
 
 import 'dart:async';
@@ -10,8 +11,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:adhan_dart/adhan_dart.dart';
 import 'package:intl/intl.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'role_selection_page.dart';
+import 'app_settings_provider.dart';
+import 'profile_page.dart';
 
 // =============================================================================
 // HAJJ PERFORMER HOME PAGE
@@ -105,25 +111,25 @@ class _HajjHomePageState extends State<HajjHomePage> {
     String displayName;
     switch (nextPrayerEnum) {
       case Prayer.fajr:
-        displayName = 'Fajr';
+        displayName = 'prayers.fajr'.tr();
         break;
       case Prayer.sunrise:
-        displayName = 'Sunrise';
+        displayName = 'prayers.sunrise'.tr();
         break;
       case Prayer.dhuhr:
-        displayName = 'Dhuhr';
+        displayName = 'prayers.dhuhr'.tr();
         break;
       case Prayer.asr:
-        displayName = 'Asr';
+        displayName = 'prayers.asr'.tr();
         break;
       case Prayer.maghrib:
-        displayName = 'Maghrib';
+        displayName = 'prayers.maghrib'.tr();
         break;
       case Prayer.isha:
-        displayName = 'Isha';
+        displayName = 'prayers.isha'.tr();
         break;
       default:
-        displayName = 'Next Prayer';
+        displayName = 'home.next_prayer'.tr();
     }
 
     setState(() {
@@ -173,6 +179,8 @@ class _HajjHomePageState extends State<HajjHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = context
+        .watch<AppSettingsProvider>(); // ← for font size in nav bar
     const background = Color(0xFF050608);
     const cardColor = Color(0xFF17191E);
     const bottomBarColor = Color(0xFF121317);
@@ -188,9 +196,9 @@ class _HajjHomePageState extends State<HajjHomePage> {
         nextPrayerTime: _nextPrayerTime,
         timeRemainingText: _timeRemainingText,
       ),
-      const _PlaceholderTab(title: 'Prayers / Rituals'),
+      _PlaceholderTab(title: 'nav.prayers'.tr()),
       const _ChatbotTab(),
-      const _PlaceholderTab(title: 'Map'),
+      _PlaceholderTab(title: 'nav.map'.tr()),
       const _HajjSettingsTab(),
     ];
 
@@ -205,23 +213,28 @@ class _HajjHomePageState extends State<HajjHomePage> {
         selectedItemColor: accent,
         unselectedItemColor: Colors.white70,
         showUnselectedLabels: true,
-        items: const [
+        selectedLabelStyle: TextStyle(fontSize: settings.fontSize - 2),
+        unselectedLabelStyle: TextStyle(fontSize: settings.fontSize - 3),
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_rounded),
-            label: 'Home',
+            icon: const Icon(Icons.home_rounded),
+            label: 'nav.home'.tr(),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.schedule_rounded),
-            label: 'Prayers',
+            icon: const Icon(Icons.schedule_rounded),
+            label: 'nav.prayers'.tr(),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_rounded),
-            label: 'Chatbot',
+            icon: const Icon(Icons.chat_bubble_rounded),
+            label: 'nav.chatbot'.tr(),
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.map_rounded), label: 'Map'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings_rounded),
-            label: 'Settings',
+            icon: const Icon(Icons.map_rounded),
+            label: 'nav.map'.tr(),
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.settings_rounded),
+            label: 'nav.settings'.tr(),
           ),
         ],
       ),
@@ -253,6 +266,8 @@ class _HomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fs = context.watch<AppSettingsProvider>().fontSize;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       child: Column(
@@ -280,29 +295,27 @@ class _HomeTab extends StatelessWidget {
           // Daily Dua
           _SectionCard(
             cardColor: cardColor,
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Daily Dua',
+                  'home.daily_dua_title'.tr(),
                   style: TextStyle(
-                    color: Color(0xFFF6B733),
+                    color: const Color(0xFFF6B733),
                     fontWeight: FontWeight.w600,
-                    fontSize: 13,
+                    fontSize: fs,
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
-                  'رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً '
-                  'وَفِي الآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ',
+                  'home.daily_dua_arabic'.tr(),
                   textAlign: TextAlign.right,
-                  style: TextStyle(color: Colors.white, fontSize: 14),
+                  style: TextStyle(color: Colors.white, fontSize: fs + 1),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
-                  'Rabbana atina fi d-dunya hasanatan wa fil-akhirati '
-                  'hasanatan wa qina adhaban-naar.',
-                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                  'home.daily_dua_transliteration'.tr(),
+                  style: TextStyle(color: Colors.white70, fontSize: fs - 1),
                 ),
               ],
             ),
@@ -328,27 +341,33 @@ class _HomeTab extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Current Ritual',
-                        style: TextStyle(color: Colors.white70, fontSize: 13),
+                        'home.current_ritual'.tr(),
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: fs - 1,
+                        ),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
-                        'Tawaf al-Qudum',
+                        'home.ritual_name'.tr(),
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
-                          fontSize: 15,
+                          fontSize: fs + 1,
                         ),
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
-                        'Masjid al-Haram, Makkah',
-                        style: TextStyle(color: Colors.white54, fontSize: 12),
+                        'home.ritual_location'.tr(),
+                        style: TextStyle(
+                          color: Colors.white54,
+                          fontSize: fs - 2,
+                        ),
                       ),
                     ],
                   ),
@@ -364,22 +383,25 @@ class _HomeTab extends StatelessWidget {
             cardColor: cardColor,
             child: Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'AI Guide',
+                        'home.ai_guide_title'.tr(),
                         style: TextStyle(
-                          color: Color(0xFFF6B733),
+                          color: const Color(0xFFF6B733),
                           fontWeight: FontWeight.w600,
-                          fontSize: 13,
+                          fontSize: fs,
                         ),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
-                        'Your Hajj companion is ready.\nAsk anything you need.',
-                        style: TextStyle(color: Colors.white70, fontSize: 13),
+                        'home.ai_guide_subtitle'.tr(),
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: fs - 1,
+                        ),
                       ),
                     ],
                   ),
@@ -425,7 +447,8 @@ class _NextPrayerContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = nextPrayerName ?? 'Next Prayer';
+    final fs = context.watch<AppSettingsProvider>().fontSize;
+    final name = nextPrayerName ?? 'home.next_prayer'.tr();
     final timeStr = nextPrayerTime != null
         ? DateFormat.Hm().format(nextPrayerTime!)
         : '--:--';
@@ -437,23 +460,23 @@ class _NextPrayerContent extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Next Prayer',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
+            Text(
+              'home.next_prayer'.tr(),
+              style: TextStyle(color: Colors.white70, fontSize: fs - 1),
             ),
             const SizedBox(height: 4),
             Text(
               name,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 20,
+                fontSize: fs + 6,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 2),
             Text(
               timeStr,
-              style: const TextStyle(color: Colors.white54, fontSize: 13),
+              style: TextStyle(color: Colors.white54, fontSize: fs - 1),
             ),
           ],
         ),
@@ -461,16 +484,17 @@ class _NextPrayerContent extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              'in $remaining',
-              style: const TextStyle(
-                color: Color(0xFFF6B733),
+              'home.in_time'.tr(namedArgs: {'time': remaining}),
+              style: TextStyle(
+                color: const Color(0xFFF6B733),
                 fontWeight: FontWeight.w600,
+                fontSize: fs,
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
-              'Makkah time',
-              style: TextStyle(color: Colors.white54, fontSize: 12),
+            Text(
+              'home.prayer_time_label'.tr(),
+              style: TextStyle(color: Colors.white54, fontSize: fs - 2),
             ),
           ],
         ),
@@ -497,6 +521,7 @@ class _TopHeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fs = context.watch<AppSettingsProvider>().fontSize;
     final displayName = (userName != null && userName!.trim().isNotEmpty)
         ? userName!
         : (userEmail != null ? userEmail!.split('@').first : 'Pilgrim');
@@ -518,25 +543,23 @@ class _TopHeaderCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Noor Al-Tariq',
+                    Text(
+                      'app_name'.tr(),
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
-                        fontSize: 16,
+                        fontSize: fs + 2,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Welcome, $displayName',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                      ),
+                      'home.welcome'.tr(namedArgs: {'name': displayName}),
+                      style: TextStyle(color: Colors.white70, fontSize: fs - 1),
                     ),
                   ],
                 ),
               ),
+              // Language indicator — shows current locale
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
@@ -547,12 +570,12 @@ class _TopHeaderCard extends StatelessWidget {
                   color: Colors.black.withOpacity(0.35),
                   border: Border.all(color: Colors.white24),
                 ),
-                child: const Text(
-                  'EN',
+                child: Text(
+                  context.locale.languageCode.toUpperCase(),
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
-                    fontSize: 12,
+                    fontSize: fs - 2,
                   ),
                 ),
               ),
@@ -573,9 +596,9 @@ class _TopHeaderCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
-              child: const Text(
-                'SOS   Request Help',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+              child: Text(
+                'home.sos'.tr(),
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: fs + 1),
               ),
             ),
           ),
@@ -620,20 +643,17 @@ class _ChatbotTab extends StatefulWidget {
 
 class _ChatbotTabState extends State<_ChatbotTab> {
   final TextEditingController _controller = TextEditingController();
+  late List<_ChatMessage> _messages;
 
-  final List<_ChatMessage> _messages = [
-    const _ChatMessage(
-      fromUser: false,
-      text:
-          'As-salamu alaykum. I am your personal Hajj companion. How may I assist you today?',
-    ),
-    const _ChatMessage(fromUser: true, text: 'What is the next ritual?'),
-    const _ChatMessage(
-      fromUser: false,
-      text:
-          'The next ritual is Tawaf al-Ifadah. It is a mandatory part of Hajj.',
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _messages = [
+      _ChatMessage(fromUser: false, text: 'chatbot.greeting'.tr()),
+      _ChatMessage(fromUser: true, text: 'chatbot.suggest_ritual'.tr()),
+      _ChatMessage(fromUser: false, text: 'chatbot.sample_answer'.tr()),
+    ];
+  }
 
   void _sendMessage() {
     final text = _controller.text.trim();
@@ -648,6 +668,7 @@ class _ChatbotTabState extends State<_ChatbotTab> {
 
   @override
   Widget build(BuildContext context) {
+    final fs = context.watch<AppSettingsProvider>().fontSize;
     const background = Color(0xFF050608);
     const panelColor = Color(0xFF17191E);
     const accent = Color(0xFFF6B733);
@@ -660,18 +681,18 @@ class _ChatbotTabState extends State<_ChatbotTab> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               color: background,
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'AI Assistant',
+                    'chatbot.title'.tr(),
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
-                      fontSize: 18,
+                      fontSize: fs + 4,
                     ),
                   ),
-                  Icon(Icons.settings_outlined, color: Colors.white70),
+                  const Icon(Icons.settings_outlined, color: Colors.white70),
                 ],
               ),
             ),
@@ -715,9 +736,9 @@ class _ChatbotTabState extends State<_ChatbotTab> {
                               ),
                               child: Text(
                                 msg.text,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 14,
+                                  fontSize: fs,
                                 ),
                               ),
                             ),
@@ -731,43 +752,37 @@ class _ChatbotTabState extends State<_ChatbotTab> {
                       child: Row(
                         children: [
                           _SuggestionChip(
-                            label: 'What is the next ritual?',
-                            onTap: () {
-                              setState(() {
-                                _messages.add(
-                                  const _ChatMessage(
-                                    fromUser: true,
-                                    text: 'What is the next ritual?',
-                                  ),
-                                );
-                              });
-                            },
+                            label: 'chatbot.suggest_ritual'.tr(),
+                            onTap: () => setState(
+                              () => _messages.add(
+                                _ChatMessage(
+                                  fromUser: true,
+                                  text: 'chatbot.next_ritual_q'.tr(),
+                                ),
+                              ),
+                            ),
                           ),
                           _SuggestionChip(
-                            label: 'Prayer times',
-                            onTap: () {
-                              setState(() {
-                                _messages.add(
-                                  const _ChatMessage(
-                                    fromUser: true,
-                                    text: 'What are the prayer times?',
-                                  ),
-                                );
-                              });
-                            },
+                            label: 'chatbot.suggest_prayer'.tr(),
+                            onTap: () => setState(
+                              () => _messages.add(
+                                _ChatMessage(
+                                  fromUser: true,
+                                  text: 'chatbot.prayer_times_q'.tr(),
+                                ),
+                              ),
+                            ),
                           ),
                           _SuggestionChip(
-                            label: 'Where am I?',
-                            onTap: () {
-                              setState(() {
-                                _messages.add(
-                                  const _ChatMessage(
-                                    fromUser: true,
-                                    text: 'Where am I now?',
-                                  ),
-                                );
-                              });
-                            },
+                            label: 'chatbot.suggest_location'.tr(),
+                            onTap: () => setState(
+                              () => _messages.add(
+                                _ChatMessage(
+                                  fromUser: true,
+                                  text: 'chatbot.location_q'.tr(),
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -777,10 +792,13 @@ class _ChatbotTabState extends State<_ChatbotTab> {
                         Expanded(
                           child: TextField(
                             controller: _controller,
-                            style: const TextStyle(color: Colors.white),
+                            style: TextStyle(color: Colors.white, fontSize: fs),
                             decoration: InputDecoration(
-                              hintText: 'Ask a question...',
-                              hintStyle: const TextStyle(color: Colors.white54),
+                              hintText: 'chatbot.ask_placeholder'.tr(),
+                              hintStyle: TextStyle(
+                                color: Colors.white54,
+                                fontSize: fs,
+                              ),
                               filled: true,
                               fillColor: const Color(0xFF101218),
                               contentPadding: const EdgeInsets.symmetric(
@@ -867,11 +885,12 @@ class _PlaceholderTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fs = context.watch<AppSettingsProvider>().fontSize;
     return Center(
       child: Text(
         '$title\n(Coming soon)',
         textAlign: TextAlign.center,
-        style: const TextStyle(color: Colors.white70, fontSize: 18),
+        style: TextStyle(color: Colors.white70, fontSize: fs + 4),
       ),
     );
   }
@@ -882,51 +901,9 @@ class _PlaceholderTab extends StatelessWidget {
 // =============================================================================
 class _HajjSettingsTab extends StatelessWidget {
   const _HajjSettingsTab();
-
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF050608),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Settings',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Logout button
-              ListTile(
-                leading: const Icon(Icons.logout, color: Colors.redAccent),
-                title: const Text(
-                  'Log Out',
-                  style: TextStyle(color: Colors.redAccent, fontSize: 16),
-                ),
-                onTap: () async {
-                  await FirebaseAuth.instance.signOut();
-                  if (!context.mounted) return;
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const RoleSelectionPage(),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      const _AppSettingsContent(isVolunteer: false);
 }
 
 // =============================================================================
@@ -958,30 +935,24 @@ class _VolunteerHomePageState extends State<VolunteerHomePage> {
         .doc(user.uid)
         .get();
 
-    if (doc.exists) {
-      setState(() {
-        _volunteerName = doc.data()?['name'] as String?;
-      });
-    }
+    if (doc.exists)
+      setState(() => _volunteerName = doc.data()?['name'] as String?);
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
+  void _onItemTapped(int index) => setState(() => _selectedIndex = index);
 
   @override
   Widget build(BuildContext context) {
+    final settings = context.watch<AppSettingsProvider>();
     const background = Color(0xFF050608);
     const bottomBarColor = Color(0xFF121317);
     const accent = Color(0xFFF6B733);
 
     final pages = <Widget>[
       _VolunteerHomeTab(volunteerName: _volunteerName),
-      const _PlaceholderTab(title: 'Help Requests'),
-      const _PlaceholderTab(title: 'Chat'),
-      const _PlaceholderTab(title: 'Map'),
+      _PlaceholderTab(title: 'nav.requests'.tr()),
+      _PlaceholderTab(title: 'nav.chat'.tr()),
+      _PlaceholderTab(title: 'nav.map'.tr()),
       const _VolunteerSettingsTab(),
     ];
 
@@ -996,26 +967,28 @@ class _VolunteerHomePageState extends State<VolunteerHomePage> {
         selectedItemColor: accent,
         unselectedItemColor: Colors.white70,
         showUnselectedLabels: true,
-        items: const [
+        selectedLabelStyle: TextStyle(fontSize: settings.fontSize - 2),
+        unselectedLabelStyle: TextStyle(fontSize: settings.fontSize - 3),
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_rounded),
-            label: 'Home',
+            icon: const Icon(Icons.home_rounded),
+            label: 'nav.home'.tr(),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.assignment_rounded),
-            label: 'Requests',
+            icon: const Icon(Icons.assignment_rounded),
+            label: 'nav.requests'.tr(),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_rounded),
-            label: 'Chat',
+            icon: const Icon(Icons.chat_bubble_rounded),
+            label: 'nav.chat'.tr(),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.map_rounded),
-            label: 'Map',
+            icon: const Icon(Icons.map_rounded),
+            label: 'nav.map'.tr(),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings_rounded),
-            label: 'Settings',
+            icon: const Icon(Icons.settings_rounded),
+            label: 'nav.settings'.tr(),
           ),
         ],
       ),
@@ -1033,6 +1006,7 @@ class _VolunteerHomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fs = context.watch<AppSettingsProvider>().fontSize;
     const cardColor = Color(0xFF17191E);
     const accent = Color(0xFFF6B733);
 
@@ -1070,20 +1044,20 @@ class _VolunteerHomeTab extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Noor Al-Tariq',
+                          Text(
+                            'app_name'.tr(),
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w600,
-                              fontSize: 16,
+                              fontSize: fs + 2,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Welcome, $displayName',
-                            style: const TextStyle(
+                            'home.welcome'.tr(namedArgs: {'name': displayName}),
+                            style: TextStyle(
                               color: Colors.white70,
-                              fontSize: 14,
+                              fontSize: fs,
                             ),
                           ),
                         ],
@@ -1098,20 +1072,20 @@ class _VolunteerHomeTab extends StatelessWidget {
                         color: Colors.green.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.circle,
                             color: Colors.green,
                             size: 8,
                           ),
-                          SizedBox(width: 6),
+                          const SizedBox(width: 6),
                           Text(
-                            'Active',
+                            'volunteer_home.active'.tr(),
                             style: TextStyle(
                               color: Colors.green,
-                              fontSize: 12,
+                              fontSize: fs - 2,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -1132,7 +1106,7 @@ class _VolunteerHomeTab extends StatelessWidget {
               Expanded(
                 child: _StatCard(
                   icon: Icons.people_rounded,
-                  label: 'Pilgrims Helped',
+                  label: 'volunteer_home.pilgrims_helped'.tr(),
                   value: '0',
                   color: accent,
                 ),
@@ -1141,7 +1115,7 @@ class _VolunteerHomeTab extends StatelessWidget {
               Expanded(
                 child: _StatCard(
                   icon: Icons.check_circle_rounded,
-                  label: 'Requests Completed',
+                  label: 'volunteer_home.requests_completed'.tr(),
                   value: '0',
                   color: Colors.green,
                 ),
@@ -1152,11 +1126,11 @@ class _VolunteerHomeTab extends StatelessWidget {
           const SizedBox(height: 20),
 
           // Active requests section
-          const Text(
-            'Active Requests',
+          Text(
+            'volunteer_home.active_requests'.tr(),
             style: TextStyle(
               color: Colors.white,
-              fontSize: 18,
+              fontSize: fs + 4,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -1178,18 +1152,18 @@ class _VolunteerHomeTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'No active requests',
+                  'volunteer_home.no_requests'.tr(),
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.5),
-                    fontSize: 14,
+                    fontSize: fs,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Help requests from pilgrims will appear here',
+                  'volunteer_home.no_requests_subtitle'.tr(),
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.3),
-                    fontSize: 12,
+                    fontSize: fs - 2,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -1220,12 +1194,12 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const cardColor = Color(0xFF17191E);
+    final fs = context.watch<AppSettingsProvider>().fontSize;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: cardColor,
+        color: const Color(0xFF17191E),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -1235,9 +1209,9 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
-              fontSize: 28,
+              fontSize: fs + 14,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -1246,7 +1220,7 @@ class _StatCard extends StatelessWidget {
             label,
             style: TextStyle(
               color: Colors.white.withOpacity(0.6),
-              fontSize: 12,
+              fontSize: fs - 2,
             ),
           ),
         ],
@@ -1256,22 +1230,57 @@ class _StatCard extends StatelessWidget {
 }
 
 // =============================================================================
-// VOLUNTEER SETTINGS TAB
+// VOLUNTEER SETTINGS TAB → delegates to shared _AppSettingsContent
 // =============================================================================
-class _VolunteerSettingsTab extends StatefulWidget {
+class _VolunteerSettingsTab extends StatelessWidget {
   const _VolunteerSettingsTab();
-
   @override
-  State<_VolunteerSettingsTab> createState() => _VolunteerSettingsTabState();
+  Widget build(BuildContext context) =>
+      const _AppSettingsContent(isVolunteer: true);
 }
 
-class _VolunteerSettingsTabState extends State<_VolunteerSettingsTab> {
+// =============================================================================
+// SHARED APP SETTINGS CONTENT (replaces both _HajjSettingsTab & _VolunteerSettingsTab)
+// =============================================================================
+class _AppSettingsContent extends StatefulWidget {
+  final bool isVolunteer;
+  const _AppSettingsContent({required this.isVolunteer});
+  @override
+  State<_AppSettingsContent> createState() => _AppSettingsContentState();
+}
+
+class _AppSettingsContentState extends State<_AppSettingsContent> {
   bool _isAvailable = true;
+  bool _prayerNotificationsEnabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+    if (doc.exists && mounted) {
+      setState(() {
+        _prayerNotificationsEnabled =
+            doc.data()?['prayerNotifications'] as bool? ?? false;
+        _isAvailable = doc.data()?['isAvailable'] as bool? ?? true;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    const cardColor = Color(0xFF17191E);
+    final settings = context.watch<AppSettingsProvider>();
+    final fs = settings.fontSize;
     const accent = Color(0xFFF6B733);
+    const cardColor = Color(0xFF17191E);
 
     return Scaffold(
       backgroundColor: const Color(0xFF050608),
@@ -1281,92 +1290,96 @@ class _VolunteerSettingsTabState extends State<_VolunteerSettingsTab> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Settings',
+              Text(
+                'settings.title'.tr(),
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
+                  fontSize: fs + 6,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 24),
 
-              // Availability toggle
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.schedule_rounded,
-                      color: accent,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 16),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Availability',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            'Toggle to receive help requests',
-                            style: TextStyle(
-                              color: Colors.white54,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Switch(
-                      value: _isAvailable,
-                      onChanged: (value) {
-                        setState(() {
-                          _isAvailable = value;
-                        });
-                      },
-                      activeColor: accent,
-                    ),
-                  ],
-                ),
+              // Account
+              _sectionLabel('settings.account_section'.tr(), accent, fs),
+              _buildTile(
+                cardColor,
+                accent,
+                Icons.person_rounded,
+                'settings.my_profile'.tr(),
+                'settings.profile_subtitle'.tr(),
+                () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ProfilePage()),
+                  );
+                },
+                fs,
+              ),
+              const SizedBox(height: 20),
+
+              // App Preferences
+              _sectionLabel('settings.app_section'.tr(), accent, fs),
+              _buildLanguageTile(cardColor, accent, settings, fs),
+              const SizedBox(height: 8),
+              _buildFontSizeTile(cardColor, accent, settings, fs),
+              const SizedBox(height: 8),
+              _buildSwitchTile(
+                cardColor,
+                accent,
+                Icons.notifications_active_rounded,
+                'profile.notifications_enable'.tr(),
+                'profile.notifications_subtitle'.tr(),
+                _prayerNotificationsEnabled,
+                (v) {
+                  setState(() => _prayerNotificationsEnabled = v);
+                  FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(FirebaseAuth.instance.currentUser?.uid)
+                      .update({'prayerNotifications': v});
+                },
+                fs,
               ),
 
-              const SizedBox(height: 16),
-
-              // Logout button
-              Container(
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(16),
+              if (widget.isVolunteer) ...[
+                const SizedBox(height: 8),
+                _buildSwitchTile(
+                  cardColor,
+                  accent,
+                  Icons.schedule_rounded,
+                  'settings.availability'.tr(),
+                  'settings.availability_subtitle'.tr(),
+                  _isAvailable,
+                  (v) {
+                    setState(() => _isAvailable = v);
+                    FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(FirebaseAuth.instance.currentUser?.uid)
+                        .update({'isAvailable': v});
+                  },
+                  fs,
                 ),
-                child: ListTile(
-                  leading: const Icon(Icons.logout, color: Colors.redAccent),
-                  title: const Text(
-                    'Log Out',
-                    style: TextStyle(color: Colors.redAccent, fontSize: 16),
-                  ),
-                  onTap: () async {
-                    await FirebaseAuth.instance.signOut();
-                    if (!context.mounted) return;
+              ],
+
+              const SizedBox(height: 32),
+              // Logout
+              _buildTile(
+                cardColor,
+                Colors.redAccent,
+                Icons.logout,
+                'common.logout'.tr(),
+                '',
+                () async {
+                  await FirebaseAuth.instance.signOut();
+                  if (mounted)
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
                         builder: (_) => const RoleSelectionPage(),
                       ),
                     );
-                  },
-                ),
+                },
+                fs,
               ),
             ],
           ),
@@ -1374,4 +1387,202 @@ class _VolunteerSettingsTabState extends State<_VolunteerSettingsTab> {
       ),
     );
   }
+
+  Widget _sectionLabel(String label, Color color, double fs) => Padding(
+    padding: const EdgeInsets.only(bottom: 8, left: 4),
+    child: Text(
+      label.toUpperCase(),
+      style: TextStyle(
+        color: color,
+        fontSize: fs - 3,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.1,
+      ),
+    ),
+  );
+
+  Widget _buildTile(
+    Color bg,
+    Color acc,
+    IconData icon,
+    String title,
+    String sub,
+    VoidCallback tap,
+    double fs,
+  ) => Container(
+    margin: const EdgeInsets.only(bottom: 8),
+    decoration: BoxDecoration(
+      color: bg,
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: ListTile(
+      leading: Icon(icon, color: acc),
+      title: Text(
+        title,
+        style: TextStyle(color: Colors.white, fontSize: fs),
+      ),
+      subtitle: sub.isNotEmpty
+          ? Text(
+              sub,
+              style: TextStyle(color: Colors.white54, fontSize: fs - 2),
+            )
+          : null,
+      trailing: const Icon(Icons.chevron_right_rounded, color: Colors.white24),
+      onTap: tap,
+    ),
+  );
+
+  Widget _buildSwitchTile(
+    Color bg,
+    Color acc,
+    IconData icon,
+    String title,
+    String sub,
+    bool val,
+    Function(bool) onChange,
+    double fs,
+  ) => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: bg,
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Row(
+      children: [
+        Icon(icon, color: acc),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(color: Colors.white, fontSize: fs),
+              ),
+              if (sub.isNotEmpty)
+                Text(
+                  sub,
+                  style: TextStyle(color: Colors.white54, fontSize: fs - 2),
+                ),
+            ],
+          ),
+        ),
+        Switch(value: val, activeColor: acc, onChanged: onChange),
+      ],
+    ),
+  );
+
+  Widget _buildLanguageTile(
+    Color bg,
+    Color acc,
+    AppSettingsProvider settings,
+    double fs,
+  ) {
+    final isAr = context.locale == const Locale('ar');
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(Icons.language_rounded, color: acc),
+              const SizedBox(width: 10),
+              Text(
+                'profile.language_section'.tr(),
+                style: TextStyle(color: Colors.white, fontSize: fs),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _langBtn('en', 'English', !isAr, acc, settings, fs),
+              const SizedBox(width: 8),
+              _langBtn('ar', 'العربية', isAr, acc, settings, fs),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _langBtn(
+    String code,
+    String label,
+    bool sel,
+    Color acc,
+    AppSettingsProvider settings,
+    double fs,
+  ) => Expanded(
+    child: GestureDetector(
+      onTap: () async {
+        await context.setLocale(Locale(code));
+        await settings.setLanguage(code == 'ar' ? 'Arabic' : 'English');
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: sel ? acc : Colors.white12,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: sel ? Colors.black : Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: fs - 1,
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  Widget _buildFontSizeTile(
+    Color bg,
+    Color acc,
+    AppSettingsProvider settings,
+    double fs,
+  ) => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: bg,
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Column(
+      children: [
+        Row(
+          children: [
+            Icon(Icons.text_fields_rounded, color: acc),
+            const SizedBox(width: 10),
+            Text(
+              'profile.font_section'.tr(),
+              style: TextStyle(color: Colors.white, fontSize: fs),
+            ),
+            const Spacer(),
+            Text(
+              '${fs.toInt()}',
+              style: TextStyle(
+                color: acc,
+                fontWeight: FontWeight.bold,
+                fontSize: fs,
+              ),
+            ),
+          ],
+        ),
+        Slider(
+          value: fs,
+          min: 12,
+          max: 22,
+          activeColor: acc,
+          onChanged: (v) => settings.setFontSize(v),
+        ),
+      ],
+    ),
+  );
 }

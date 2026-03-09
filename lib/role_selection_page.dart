@@ -1,13 +1,14 @@
 // =============================================================================
 // FILE: role_selection_page.dart
 // DESCRIPTION: Role selection page - MODIFIED for new volunteer flow
-// CHANGES: 
+// CHANGES:
 //   - Both roles now go to AuthPage first (volunteer no longer skips auth)
 //   - Removed direct navigation to VolunteerRequestPage
 //   - Added visual distinction for the two paths
 // =============================================================================
 
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'auth_page.dart';
 
 class RoleSelectionPage extends StatelessWidget {
@@ -20,7 +21,7 @@ class RoleSelectionPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Noor Al-Tariq'),
+        title: Text('app_name'.tr()),
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 16.0),
@@ -33,19 +34,18 @@ class RoleSelectionPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Arabic greeting
-            const Text(
-              'السلام عليكم',
-              style: TextStyle(
+            Text(
+              'role_selection.greeting'.tr(),
+              style: const TextStyle(
                 fontSize: 20,
                 color: Colors.white70,
                 fontWeight: FontWeight.w400,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'How will you use Noor Al-Tariq?',
-              style: TextStyle(
+            Text(
+              'role_selection.title'.tr(),
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
                 color: Colors.white,
@@ -53,7 +53,7 @@ class RoleSelectionPage extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Choose your role to personalize your experience.',
+              'role_selection.subtitle'.tr(),
               style: TextStyle(
                 color: Colors.white.withOpacity(0.7),
                 fontSize: 14,
@@ -63,54 +63,42 @@ class RoleSelectionPage extends StatelessWidget {
             Expanded(
               child: Column(
                 children: [
-                  // HAJJ PERFORMER CARD
                   _RoleCard(
-                    title: 'Hajj Performer',
-                    subtitle: 'Navigation, duas, help requests and more.',
+                    title: 'role_selection.hajj_title'.tr(),
+                    subtitle: 'role_selection.hajj_subtitle'.tr(),
                     icon: Icons.mosque_rounded,
                     accent: accent,
                     cardColor: cardColor,
-                    onTap: () {
-                      // Navigate to auth page for hajj performer
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AuthPage(role: 'hajj_performer'),
-                        ),
-                      );
-                    },
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AuthPage(role: 'hajj_performer'),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
-
-                  // VOLUNTEER CARD - MODIFIED: Now goes to AuthPage first
                   _RoleCard(
-                    title: 'Volunteer',
-                    subtitle: 'Sign up to assist pilgrims after approval.',
+                    title: 'role_selection.volunteer_title'.tr(),
+                    subtitle: 'role_selection.volunteer_subtitle'.tr(),
                     icon: Icons.volunteer_activism_rounded,
                     accent: accent,
                     cardColor: cardColor,
-                    // NEW: Show badge indicating approval required
-                    badge: 'Approval Required',
-                    onTap: () {
-                      // MODIFIED: Navigate to auth page first, then application form
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AuthPage(role: 'volunteer'),
-                        ),
-                      );
-                    },
+                    badge: 'role_selection.approval_badge'.tr(),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AuthPage(role: 'volunteer'),
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-            
-            // Footer info
             Center(
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Text(
-                  'Volunteers require admin approval before access.',
+                  'role_selection.footer'.tr(),
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.5),
                     fontSize: 12,
@@ -136,7 +124,7 @@ class _RoleCard extends StatelessWidget {
   final Color accent;
   final Color cardColor;
   final VoidCallback onTap;
-  final String? badge; // NEW: Optional badge text
+  final String? badge;
 
   const _RoleCard({
     required this.title,
@@ -145,7 +133,7 @@ class _RoleCard extends StatelessWidget {
     required this.accent,
     required this.cardColor,
     required this.onTap,
-    this.badge, // NEW
+    this.badge,
   });
 
   @override
