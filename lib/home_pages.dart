@@ -18,6 +18,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'role_selection_page.dart';
 import 'app_settings_provider.dart';
 import 'profile_page.dart';
+import 'sos_request_page.dart';
 
 // =============================================================================
 // HAJJ PERFORMER HOME PAGE
@@ -172,7 +173,16 @@ class _HajjHomePageState extends State<HajjHomePage> {
 
   // NAV BAR
   void _onItemTapped(int index) {
+    // Index 2 is the SOS button — it opens a new page instead of switching tabs
+    if (index == 2) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => SOSRequestPage()),
+      );
+      return;
+    }
     setState(() {
+      // Map nav indices to page indices (skip index 2 which is SOS)
       _selectedIndex = index;
     });
   }
@@ -186,6 +196,7 @@ class _HajjHomePageState extends State<HajjHomePage> {
     const bottomBarColor = Color(0xFF121317);
     const accent = Color(0xFFF6B733);
 
+    // Pages: 0=Home, 1=Chatbot, 2=SOS(not a page), 3=Map, 4=Settings
     final pages = <Widget>[
       _HomeTab(
         accent: accent,
@@ -196,8 +207,8 @@ class _HajjHomePageState extends State<HajjHomePage> {
         nextPrayerTime: _nextPrayerTime,
         timeRemainingText: _timeRemainingText,
       ),
-      _PlaceholderTab(title: 'nav.prayers'.tr()),
       const _ChatbotTab(),
+      const SizedBox(), // placeholder for SOS (never shown, opens as page)
       _PlaceholderTab(title: 'nav.map'.tr()),
       const _HajjSettingsTab(),
     ];
@@ -205,38 +216,145 @@ class _HajjHomePageState extends State<HajjHomePage> {
     return Scaffold(
       backgroundColor: background,
       body: SafeArea(child: pages[_selectedIndex]),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: bottomBarColor,
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        selectedItemColor: accent,
-        unselectedItemColor: Colors.white70,
-        showUnselectedLabels: true,
-        selectedLabelStyle: TextStyle(fontSize: settings.fontSize - 2),
-        unselectedLabelStyle: TextStyle(fontSize: settings.fontSize - 3),
-        items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.home_rounded),
-            label: 'nav.home'.tr(),
+      extendBody: true,
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: bottomBarColor,
+          border: Border(top: BorderSide(color: Colors.white10, width: 0.5)),
+        ),
+        child: SafeArea(
+          child: SizedBox(
+            height: 70,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                // Home
+                _NavBarItem(
+                  icon: Icons.home_rounded,
+                  label: 'nav.home'.tr(),
+                  isSelected: _selectedIndex == 0,
+                  accent: accent,
+                  fontSize: settings.fontSize - 3,
+                  onTap: () => _onItemTapped(0),
+                ),
+                // Chatbot
+                _NavBarItem(
+                  icon: Icons.chat_bubble_rounded,
+                  label: 'nav.chatbot'.tr(),
+                  isSelected: _selectedIndex == 1,
+                  accent: accent,
+                  fontSize: settings.fontSize - 3,
+                  onTap: () => _onItemTapped(1),
+                ),
+                // SOS - Raised circle button
+                GestureDetector(
+                  onTap: () => _onItemTapped(2),
+                  child: Container(
+                    width: 62,
+                    height: 62,
+                    margin: const EdgeInsets.only(bottom: 4),
+                    decoration: BoxDecoration(
+                      color: accent,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: accent.withOpacity(0.4),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.sos_rounded, color: Colors.black, size: 20),
+                        SizedBox(height: 1),
+                        Text(
+                          'Get Help',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Map
+                _NavBarItem(
+                  icon: Icons.map_rounded,
+                  label: 'nav.map'.tr(),
+                  isSelected: _selectedIndex == 3,
+                  accent: accent,
+                  fontSize: settings.fontSize - 3,
+                  onTap: () => _onItemTapped(3),
+                ),
+                // Settings
+                _NavBarItem(
+                  icon: Icons.settings_rounded,
+                  label: 'nav.settings'.tr(),
+                  isSelected: _selectedIndex == 4,
+                  accent: accent,
+                  fontSize: settings.fontSize - 3,
+                  onTap: () => _onItemTapped(4),
+                ),
+              ],
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.schedule_rounded),
-            label: 'nav.prayers'.tr(),
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.chat_bubble_rounded),
-            label: 'nav.chatbot'.tr(),
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.map_rounded),
-            label: 'nav.map'.tr(),
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.settings_rounded),
-            label: 'nav.settings'.tr(),
-          ),
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// CUSTOM NAV BAR ITEM (for the pilgrim bottom bar)
+// =============================================================================
+class _NavBarItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final Color accent;
+  final double fontSize;
+  final VoidCallback onTap;
+
+  const _NavBarItem({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.accent,
+    required this.fontSize,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 60,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? accent : Colors.white70,
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? accent : Colors.white70,
+                fontSize: fontSize,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -580,27 +698,6 @@ class _TopHeaderCard extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                // TODO: SOS request screen
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: accent,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: Text(
-                'home.sos'.tr(),
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: fs + 1),
-              ),
-            ),
           ),
         ],
       ),
