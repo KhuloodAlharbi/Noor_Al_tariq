@@ -18,6 +18,8 @@ import 'role_selection_page.dart';
 import 'app_settings_provider.dart';
 import 'profile_page.dart';
 import 'sos_request_page.dart';
+import 'volunteer_requests_tab.dart';
+import 'chat_page.dart';
 import 'map_page.dart';
 
 final api = ApiService();
@@ -340,11 +342,7 @@ class _NavBarItem extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              color: isSelected ? accent : Colors.white70,
-              size: 24,
-            ),
+            Icon(icon, color: isSelected ? accent : Colors.white70, size: 24),
             const SizedBox(height: 4),
             Text(
               label,
@@ -1056,8 +1054,8 @@ class _VolunteerHomePageState extends State<VolunteerHomePage> {
 
     final pages = <Widget>[
       _VolunteerHomeTab(volunteerName: _volunteerName),
-      _PlaceholderTab(title: 'nav.requests'.tr()),
-      _PlaceholderTab(title: 'nav.chat'.tr()),
+      const VolunteerRequestsTab(),
+      const _VolunteerChatsTab(),
       _PlaceholderTab(title: 'nav.map'.tr()),
       const _VolunteerSettingsTab(),
     ];
@@ -1277,6 +1275,302 @@ class _VolunteerHomeTab extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// VOLUNTEER CHATS TAB
+// Uses StatefulWidget so the stream subscription survives rebuilds.
+// Query is intentionally simple (single field filter only) to avoid
+// needing a composite Firestore index. Filtering by status is done
+// client-side after the snapshot arrives.
+// =============================================================================
+class _VolunteerChatsTab extends StatefulWidget {
+  const _VolunteerChatsTab();
+
+  @override
+  State<_VolunteerChatsTab> createState() => _VolunteerChatsTabState();
+}
+
+class _VolunteerChatsTabState extends State<_VolunteerChatsTab> {
+  Stream<QuerySnapshot>? _stream;
+
+  @override
+  void initState() {
+    super.initState();
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      // Simple single-field query — no composite index needed.
+      // Status filtering happens client-side below.
+      _stream = FirebaseFirestore.instance
+          .collection('helpRequests')
+          .where('assignedVolunteer', isEqualTo: uid)
+          .snapshots();
+    }
+  }
+
+  String _typeLabel(String? type) {
+    const m = {
+      'medical': 'Medical Assistance',
+      'navigation': 'Navigation Help',
+      'translation': 'Translation Help',
+      'general_guidance': 'General Help',
+      'emergency_response': 'Emergency Response',
+      'crowd_management': 'Crowd Safety',
+    };
+    return m[type] ?? 'General Help';
+  }
+
+  String _timeAgo(Timestamp ts) {
+    final diff = DateTime.now().difference(ts.toDate());
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final fs = context.watch<AppSettingsProvider>().fontSize;
+    const background = Color(0xFF050608);
+    const cardColor = Color(0xFF17191E);
+    const accent = Color(0xFFF6B733);
+
+    return Scaffold(
+      backgroundColor: background,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+              child: Text(
+                'Active Chats',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: fs + 6,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            Expanded(
+              child: _stream == null
+                  ? const Center(
+                      child: Text(
+                        'Please log in',
+                        style: TextStyle(color: Colors.white54),
+                      ),
+                    )
+                  : StreamBuilder<QuerySnapshot>(
+                      stream: _stream,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(color: accent),
+                          );
+                        }
+
+                        if (snapshot.hasError) {
+                          return Center(
+                            child: Text(
+                              'Error: ${snapshot.error}',
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 13,
+                              ),
+                            ),
+                          );
+                        }
+
+                        // Client-side filter: only accepted / in_progress
+                        final docs =
+                            (snapshot.data?.docs ?? []).where((d) {
+                                final s =
+                                    (Map<String, dynamic>.from(
+                                          d.data() as Map? ?? {},
+                                        ))['status']
+                                        as String?;
+                                return s == 'accepted' || s == 'in_progress';
+                              }).toList()
+                              // Sort by acceptedAt descending client-side
+                              ..sort((a, b) {
+                                final ta =
+                                    (Map<String, dynamic>.from(
+                                          a.data() as Map? ?? {},
+                                        ))['acceptedAt']
+                                        as Timestamp?;
+                                final tb =
+                                    (Map<String, dynamic>.from(
+                                          b.data() as Map? ?? {},
+                                        ))['acceptedAt']
+                                        as Timestamp?;
+                                if (ta == null && tb == null) return 0;
+                                if (ta == null) return 1;
+                                if (tb == null) return -1;
+                                return tb.compareTo(ta);
+                              });
+
+                        if (docs.isEmpty) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.chat_bubble_outline,
+                                  size: 56,
+                                  color: Colors.white.withOpacity(0.2),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No active chats',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.5),
+                                    fontSize: fs,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Accept a request to start chatting',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.3),
+                                    fontSize: fs - 2,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        return ListView.builder(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
+                          itemCount: docs.length,
+                          itemBuilder: (context, i) {
+                            final data = Map<String, dynamic>.from(
+                              docs[i].data() as Map? ?? {},
+                            );
+                            final pilgrimName =
+                                data['pilgrimName'] as String? ?? 'Pilgrim';
+                            final type =
+                                data['requestType'] as String? ??
+                                'general_guidance';
+                            final lastMsg =
+                                data['lastMessage'] as String? ?? '';
+                            final acceptedAt = data['acceptedAt'] as Timestamp?;
+
+                            return GestureDetector(
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ChatPage(
+                                    requestId: docs[i].id,
+                                    myRole: 'volunteer',
+                                  ),
+                                ),
+                              ),
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 10),
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: cardColor,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: accent.withOpacity(0.25),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: accent.withOpacity(0.12),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.chat_bubble_outline,
+                                        color: accent,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            pilgrimName,
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: fs,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            _typeLabel(type),
+                                            style: TextStyle(
+                                              color: accent.withOpacity(0.8),
+                                              fontSize: fs - 3,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          if (lastMsg.isNotEmpty) ...[
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              lastMsg,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                color: Colors.white.withOpacity(
+                                                  0.45,
+                                                ),
+                                                fontSize: fs - 3,
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: [
+                                        const Icon(
+                                          Icons.arrow_forward_ios_rounded,
+                                          color: Colors.white24,
+                                          size: 14,
+                                        ),
+                                        if (acceptedAt != null) ...[
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            _timeAgo(acceptedAt),
+                                            style: TextStyle(
+                                              color: Colors.white.withOpacity(
+                                                0.3,
+                                              ),
+                                              fontSize: fs - 4,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

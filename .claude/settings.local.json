@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter analyze:*)",
+      "Bash(flutter pub:*)",
+      "Bash(du -sh \"c:/Users/sarah/Downloads/noor_al_tariq-1/backend/\"*)"
+    ]
+  }
+}

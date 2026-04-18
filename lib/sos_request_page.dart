@@ -9,6 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'services/sos_classification_service.dart';
+import 'chat_page.dart';
 
 class SOSRequestPage extends StatefulWidget {
   const SOSRequestPage({super.key});
@@ -72,7 +73,10 @@ class _SOSRequestPageState extends State<SOSRequestPage>
       setState(() => _errorMessage = 'Speech recognition not available');
       return;
     }
-    setState(() { _isListening = true; _errorMessage = null; });
+    setState(() {
+      _isListening = true;
+      _errorMessage = null;
+    });
     await _speech.listen(
       onResult: (result) {
         setState(() {
@@ -95,7 +99,10 @@ class _SOSRequestPageState extends State<SOSRequestPage>
       return;
     }
 
-    setState(() { _isSubmitting = true; _errorMessage = null; });
+    setState(() {
+      _isSubmitting = true;
+      _errorMessage = null;
+    });
 
     try {
       if (_isListening) {
@@ -105,22 +112,31 @@ class _SOSRequestPageState extends State<SOSRequestPage>
 
       // Get GPS (continue even if it fails)
       Position? position;
-      try { position = await _getCurrentLocation(); } catch (_) {}
+      try {
+        position = await _getCurrentLocation();
+      } catch (_) {}
 
       // Classify
       final classification = await SOSClassificationService.classify(text);
 
       final user = FirebaseAuth.instance.currentUser;
-      if (user == null) { setState(() => _errorMessage = 'You must be logged in'); return; }
+      if (user == null) {
+        setState(() => _errorMessage = 'You must be logged in');
+        return;
+      }
 
       // Get pilgrim name from Firestore
       String pilgrimName = 'Pilgrim';
       try {
         final userDoc = await FirebaseFirestore.instance
-            .collection('users').doc(user.uid).get();
+            .collection('users')
+            .doc(user.uid)
+            .get();
         if (userDoc.exists) {
-          pilgrimName = userDoc.data()?['name'] as String? ?? 
-              user.email?.split('@').first ?? 'Pilgrim';
+          pilgrimName =
+              userDoc.data()?['name'] as String? ??
+              user.email?.split('@').first ??
+              'Pilgrim';
         }
       } catch (_) {}
 
@@ -158,7 +174,10 @@ class _SOSRequestPageState extends State<SOSRequestPage>
               const SizedBox(width: 8),
               Text(
                 'Request sent! Type: ${_typeLabel(classification['request_type'])}',
-                style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
@@ -182,7 +201,9 @@ class _SOSRequestPageState extends State<SOSRequestPage>
       if (permission == LocationPermission.denied) return null;
     }
     if (permission == LocationPermission.deniedForever) return null;
-    return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    return await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
   }
 
   String _typeLabel(String? type) {
@@ -199,38 +220,60 @@ class _SOSRequestPageState extends State<SOSRequestPage>
 
   Color _statusColor(String status) {
     switch (status) {
-      case 'pending': return Colors.orange;
-      case 'assigned': return Colors.blue;
-      case 'accepted': return const Color(0xFFF6B645);
-      case 'in_progress': return const Color(0xFFF6B645);
-      case 'resolved': return Colors.green;
-      case 'declined': return Colors.red;
-      case 'cancelled': return Colors.grey;
-      default: return Colors.white54;
+      case 'pending':
+        return Colors.orange;
+      case 'assigned':
+        return Colors.blue;
+      case 'accepted':
+        return const Color(0xFFF6B645);
+      case 'in_progress':
+        return const Color(0xFFF6B645);
+      case 'resolved':
+        return Colors.green;
+      case 'declined':
+        return Colors.red;
+      case 'cancelled':
+        return Colors.grey;
+      default:
+        return Colors.white54;
     }
   }
 
   String _statusLabel(String status) {
     switch (status) {
-      case 'pending': return 'Looking for volunteer...';
-      case 'assigned': return 'Volunteer found, waiting...';
-      case 'accepted': return 'Volunteer on the way!';
-      case 'in_progress': return 'Help in progress';
-      case 'resolved': return 'Resolved';
-      case 'declined': return 'Finding another...';
-      case 'cancelled': return 'Cancelled';
-      default: return status;
+      case 'pending':
+        return 'Looking for volunteer...';
+      case 'assigned':
+        return 'Volunteer found, waiting...';
+      case 'accepted':
+        return 'Volunteer on the way!';
+      case 'in_progress':
+        return 'Help in progress';
+      case 'resolved':
+        return 'Resolved';
+      case 'declined':
+        return 'Finding another...';
+      case 'cancelled':
+        return 'Cancelled';
+      default:
+        return status;
     }
   }
 
   IconData _typeIcon(String? type) {
     switch (type) {
-      case 'medical': return Icons.local_hospital_rounded;
-      case 'navigation': return Icons.navigation_rounded;
-      case 'translation': return Icons.translate_rounded;
-      case 'emergency_response': return Icons.emergency_rounded;
-      case 'crowd_management': return Icons.groups_rounded;
-      default: return Icons.help_outline_rounded;
+      case 'medical':
+        return Icons.local_hospital_rounded;
+      case 'navigation':
+        return Icons.navigation_rounded;
+      case 'translation':
+        return Icons.translate_rounded;
+      case 'emergency_response':
+        return Icons.emergency_rounded;
+      case 'crowd_management':
+        return Icons.groups_rounded;
+      default:
+        return Icons.help_outline_rounded;
     }
   }
 
@@ -247,11 +290,16 @@ class _SOSRequestPageState extends State<SOSRequestPage>
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Request Help',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+        title: const Text(
+          'Request Help',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -268,12 +316,17 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                   Container(
                     padding: const EdgeInsets.all(3),
                     decoration: BoxDecoration(
-                      color: cardColor, borderRadius: BorderRadius.circular(10),
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        _languageButton('\u0627\u0644\u0639\u0631\u0628\u064A\u0629', 'ar-SA', accent),
+                        _languageButton(
+                          '\u0627\u0644\u0639\u0631\u0628\u064A\u0629',
+                          'ar-SA',
+                          accent,
+                        ),
                         const SizedBox(width: 4),
                         _languageButton('English', 'en-US', accent),
                       ],
@@ -285,22 +338,30 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                   // Text input (3-4 lines)
                   Container(
                     height: 100,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
-                      color: cardColor, borderRadius: BorderRadius.circular(14),
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: accent.withOpacity(0.3)),
                     ),
                     child: TextField(
                       controller: _textController,
                       maxLines: 4,
                       textDirection: _selectedLanguage == 'ar-SA'
-                          ? TextDirection.rtl : TextDirection.ltr,
+                          ? TextDirection.rtl
+                          : TextDirection.ltr,
                       style: const TextStyle(color: Colors.white, fontSize: 15),
                       decoration: InputDecoration(
                         hintText: _selectedLanguage == 'ar-SA'
                             ? '\u0627\u0643\u062A\u0628 \u0645\u0634\u0643\u0644\u062A\u0643 \u0647\u0646\u0627...'
                             : 'Describe your problem...',
-                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 14),
+                        hintStyle: TextStyle(
+                          color: Colors.white.withOpacity(0.3),
+                          fontSize: 14,
+                        ),
                         border: InputBorder.none,
                         isDense: true,
                         contentPadding: EdgeInsets.zero,
@@ -314,9 +375,11 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                   if (_errorMessage != null)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
-                      child: Text(_errorMessage!,
+                      child: Text(
+                        _errorMessage!,
                         style: const TextStyle(color: Colors.red, fontSize: 12),
-                        textAlign: TextAlign.center),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
 
                   // Listening indicator
@@ -326,13 +389,24 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Container(width: 8, height: 8,
-                            decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)),
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
                           const SizedBox(width: 6),
-                          Text(_selectedLanguage == 'ar-SA'
-                              ? '\u062C\u0627\u0631\u064A \u0627\u0644\u0627\u0633\u062A\u0645\u0627\u0639...'
-                              : 'Listening...',
-                            style: const TextStyle(color: Colors.red, fontSize: 13)),
+                          Text(
+                            _selectedLanguage == 'ar-SA'
+                                ? '\u062C\u0627\u0631\u064A \u0627\u0644\u0627\u0633\u062A\u0645\u0627\u0639...'
+                                : 'Listening...',
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 13,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -341,20 +415,29 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                   Row(
                     children: [
                       ScaleTransition(
-                        scale: _isListening ? _pulseAnimation : const AlwaysStoppedAnimation(1.0),
+                        scale: _isListening
+                            ? _pulseAnimation
+                            : const AlwaysStoppedAnimation(1.0),
                         child: GestureDetector(
                           onTap: _isSubmitting ? null : _toggleListening,
                           child: Container(
-                            width: 48, height: 48,
+                            width: 48,
+                            height: 48,
                             decoration: BoxDecoration(
                               color: _isListening ? Colors.red : cardColor,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: _isListening ? Colors.red : accent.withOpacity(0.5), width: 2),
+                                color: _isListening
+                                    ? Colors.red
+                                    : accent.withOpacity(0.5),
+                                width: 2,
+                              ),
                             ),
                             child: Icon(
                               _isListening ? Icons.stop : Icons.mic,
-                              color: _isListening ? Colors.white : accent, size: 22),
+                              color: _isListening ? Colors.white : accent,
+                              size: 22,
+                            ),
                           ),
                         ),
                       ),
@@ -365,23 +448,41 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                           child: Container(
                             height: 48,
                             decoration: BoxDecoration(
-                              color: _isSubmitting ? accent.withOpacity(0.5) : accent,
+                              color: _isSubmitting
+                                  ? accent.withOpacity(0.5)
+                                  : accent,
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: Center(
                               child: _isSubmitting
-                                ? const SizedBox(width: 22, height: 22,
-                                    child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.black))
-                                : const Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.send_rounded, color: Colors.black, size: 20),
-                                      SizedBox(width: 6),
-                                      Text('Send SOS Request',
-                                        style: TextStyle(color: Colors.black, fontSize: 15,
-                                          fontWeight: FontWeight.bold)),
-                                    ],
-                                  ),
+                                  ? const SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.5,
+                                        color: Colors.black,
+                                      ),
+                                    )
+                                  : const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.send_rounded,
+                                          color: Colors.black,
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 6),
+                                        Text(
+                                          'Send SOS Request',
+                                          style: TextStyle(
+                                            color: Colors.black,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                             ),
                           ),
                         ),
@@ -399,14 +500,23 @@ class _SOSRequestPageState extends State<SOSRequestPage>
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  Expanded(child: Container(height: 0.5, color: Colors.white12)),
+                  Expanded(
+                    child: Container(height: 0.5, color: Colors.white12),
+                  ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('My Requests',
-                      style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13,
-                        fontWeight: FontWeight.w600)),
+                    child: Text(
+                      'My Requests',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.5),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                  Expanded(child: Container(height: 0.5, color: Colors.white12)),
+                  Expanded(
+                    child: Container(height: 0.5, color: Colors.white12),
+                  ),
                 ],
               ),
             ),
@@ -416,149 +526,289 @@ class _SOSRequestPageState extends State<SOSRequestPage>
             // ═══════════ BOTTOM: Live Request List ═══════════
             Expanded(
               child: currentUser == null
-                ? const Center(child: Text('Please log in', style: TextStyle(color: Colors.white54)))
-                : StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection('helpRequests')
-                        .where('pilgrimId', isEqualTo: currentUser.uid)
-                        .orderBy('createdAt', descending: true)
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator(color: accent));
-                      }
+                  ? const Center(
+                      child: Text(
+                        'Please log in',
+                        style: TextStyle(color: Colors.white54),
+                      ),
+                    )
+                  : StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('helpRequests')
+                          .where('pilgrimId', isEqualTo: currentUser.uid)
+                          .orderBy('createdAt', descending: true)
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(color: accent),
+                          );
+                        }
 
-                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.inbox_rounded, size: 48,
-                                color: Colors.white.withOpacity(0.2)),
-                              const SizedBox(height: 12),
-                              Text('No requests yet',
-                                style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 14)),
-                              const SizedBox(height: 4),
-                              Text('Your help requests will appear here',
-                                style: TextStyle(color: Colors.white.withOpacity(0.25), fontSize: 12)),
-                            ],
-                          ),
-                        );
-                      }
-
-                      final docs = snapshot.data!.docs;
-                      return ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: docs.length,
-                        itemBuilder: (context, index) {
-                          final data = docs[index].data() as Map<String, dynamic>;
-                          final status = data['status'] as String? ?? 'pending';
-                          final type = data['requestType'] as String? ?? 'general_guidance';
-                          final desc = data['description'] as String? ?? '';
-                          final volunteerName = data['volunteerName'] as String?;
-                          final createdAt = data['createdAt'] as Timestamp?;
-                          final timeStr = createdAt != null
-                              ? '${createdAt.toDate().hour.toString().padLeft(2, '0')}:${createdAt.toDate().minute.toString().padLeft(2, '0')}'
-                              : '';
-
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: cardColor,
-                              borderRadius: BorderRadius.circular(14),
-                            ),
+                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                          return Center(
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                // Top row: icon + type + time
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(6),
-                                      decoration: BoxDecoration(
-                                        color: _statusColor(status).withOpacity(0.15),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Icon(_typeIcon(type),
-                                        color: _statusColor(status), size: 18),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(_typeLabel(type),
-                                            style: const TextStyle(color: Colors.white,
-                                              fontSize: 14, fontWeight: FontWeight.w600)),
-                                          const SizedBox(height: 2),
-                                          Text(desc,
-                                            maxLines: 1, overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(color: Colors.white.withOpacity(0.5),
-                                              fontSize: 12)),
-                                        ],
-                                      ),
-                                    ),
-                                    Text(timeStr,
-                                      style: TextStyle(color: Colors.white.withOpacity(0.3),
-                                        fontSize: 11)),
-                                  ],
+                                Icon(
+                                  Icons.inbox_rounded,
+                                  size: 48,
+                                  color: Colors.white.withOpacity(0.2),
                                 ),
-
-                                const SizedBox(height: 10),
-
-                                // Status badge + cancel
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: _statusColor(status).withOpacity(0.15),
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Container(width: 6, height: 6,
-                                            decoration: BoxDecoration(
-                                              color: _statusColor(status),
-                                              shape: BoxShape.circle)),
-                                          const SizedBox(width: 6),
-                                          Text(_statusLabel(status),
-                                            style: TextStyle(color: _statusColor(status),
-                                              fontSize: 11, fontWeight: FontWeight.w600)),
-                                        ],
-                                      ),
-                                    ),
-                                    const Spacer(),
-                                    if (volunteerName != null)
-                                      Text('Volunteer: $volunteerName',
-                                        style: TextStyle(color: Colors.white.withOpacity(0.4),
-                                          fontSize: 11)),
-                                    if (status == 'pending')
-                                      GestureDetector(
-                                        onTap: () {
-                                          docs[index].reference.update({'status': 'cancelled'});
-                                        },
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: Colors.red.withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: const Text('Cancel',
-                                            style: TextStyle(color: Colors.red, fontSize: 11)),
-                                        ),
-                                      ),
-                                  ],
+                                const SizedBox(height: 12),
+                                Text(
+                                  'No requests yet',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.4),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Your help requests will appear here',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.25),
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ],
                             ),
                           );
-                        },
-                      );
-                    },
-                  ),
+                        }
+
+                        final docs = snapshot.data!.docs;
+                        return ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: docs.length,
+                          itemBuilder: (context, index) {
+                            final data =
+                                docs[index].data() as Map<String, dynamic>;
+                            final status =
+                                data['status'] as String? ?? 'pending';
+                            final type =
+                                data['requestType'] as String? ??
+                                'general_guidance';
+                            final desc = data['description'] as String? ?? '';
+                            final volunteerName =
+                                data['volunteerName'] as String?;
+                            final createdAt = data['createdAt'] as Timestamp?;
+                            final timeStr = createdAt != null
+                                ? '${createdAt.toDate().hour.toString().padLeft(2, '0')}:${createdAt.toDate().minute.toString().padLeft(2, '0')}'
+                                : '';
+
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 10),
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: cardColor,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Top row: icon + type + time
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: _statusColor(
+                                            status,
+                                          ).withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          _typeIcon(type),
+                                          color: _statusColor(status),
+                                          size: 18,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              _typeLabel(type),
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              desc,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                color: Colors.white.withOpacity(
+                                                  0.5,
+                                                ),
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Text(
+                                        timeStr,
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.3),
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+
+                                  const SizedBox(height: 10),
+
+                                  // Status badge + action buttons
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: _statusColor(
+                                            status,
+                                          ).withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Container(
+                                              width: 6,
+                                              height: 6,
+                                              decoration: BoxDecoration(
+                                                color: _statusColor(status),
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              _statusLabel(status),
+                                              style: TextStyle(
+                                                color: _statusColor(status),
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      // ── OPEN CHAT button when accepted ──────
+                                      if (status == 'accepted' ||
+                                          status == 'in_progress')
+                                        GestureDetector(
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => ChatPage(
+                                                  requestId: docs[index].id,
+                                                  myRole: 'pilgrim',
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 6,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: const Color(
+                                                0xFFF6B733,
+                                              ).withOpacity(0.15),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              border: Border.all(
+                                                color: const Color(
+                                                  0xFFF6B733,
+                                                ).withOpacity(0.5),
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: const [
+                                                Icon(
+                                                  Icons.chat_bubble_outline,
+                                                  color: Color(0xFFF6B733),
+                                                  size: 13,
+                                                ),
+                                                SizedBox(width: 5),
+                                                Text(
+                                                  'Open Chat',
+                                                  style: TextStyle(
+                                                    color: Color(0xFFF6B733),
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      if (volunteerName != null &&
+                                          status != 'accepted' &&
+                                          status != 'in_progress')
+                                        Text(
+                                          'Volunteer: $volunteerName',
+                                          style: TextStyle(
+                                            color: Colors.white.withOpacity(
+                                              0.4,
+                                            ),
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                      if (status == 'pending')
+                                        GestureDetector(
+                                          onTap: () {
+                                            docs[index].reference.update({
+                                              'status': 'cancelled',
+                                            });
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red.withOpacity(
+                                                0.1,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: const Text(
+                                              'Cancel',
+                                              style: TextStyle(
+                                                color: Colors.red,
+                                                fontSize: 11,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -576,11 +826,14 @@ class _SOSRequestPageState extends State<SOSRequestPage>
           color: isSelected ? accent : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Text(label,
+        child: Text(
+          label,
           style: TextStyle(
             color: isSelected ? Colors.black : Colors.white.withOpacity(0.5),
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            fontSize: 13)),
+            fontSize: 13,
+          ),
+        ),
       ),
     );
   }
