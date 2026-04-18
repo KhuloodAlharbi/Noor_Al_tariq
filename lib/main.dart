@@ -23,15 +23,14 @@ import 'pending_approval_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  
+
   await Firebase.initializeApp();
   await EasyLocalization.ensureInitialized();
 
   runApp(
     EasyLocalization(
       supportedLocales: const [Locale('en'), Locale('ar')],
-      path: 'assets/translations', 
+      path: 'assets/translations',
       fallbackLocale: const Locale('en'),
       child: ChangeNotifierProvider(
         create: (_) => AppSettingsProvider(),

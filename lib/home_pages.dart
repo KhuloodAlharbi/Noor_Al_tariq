@@ -10,15 +10,17 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:adhan_dart/adhan_dart.dart';
-import 'package:intl/intl.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:noor_al_tariq/api/api_service.dart';
 
 import 'role_selection_page.dart';
 import 'app_settings_provider.dart';
 import 'profile_page.dart';
 import 'sos_request_page.dart';
+import 'map_page.dart';
+
+final api = ApiService();
 
 // =============================================================================
 // HAJJ PERFORMER HOME PAGE
@@ -209,7 +211,7 @@ class _HajjHomePageState extends State<HajjHomePage> {
       ),
       const _ChatbotTab(),
       const SizedBox(), // placeholder for SOS (never shown, opens as page)
-      _PlaceholderTab(title: 'nav.map'.tr()),
+      MapPage(),
       const _HajjSettingsTab(),
     ];
 
@@ -752,14 +754,21 @@ class _ChatbotTabState extends State<_ChatbotTab> {
     ];
   }
 
-  void _sendMessage() {
+  void _sendMessage() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
     setState(() {
       _messages.add(_ChatMessage(fromUser: true, text: text));
       _controller.clear();
-      // Later we should call the chatbot API here and add a reply
+    });
+
+    // Call backend
+    final api = ApiService();
+    final reply = await api.askChatbot(text);
+
+    setState(() {
+      _messages.add(_ChatMessage(fromUser: false, text: reply));
     });
   }
 

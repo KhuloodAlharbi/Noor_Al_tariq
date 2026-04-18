@@ -1,0 +1,10 @@
+flask
+pandas
+numpy
+joblib
+sentence-transformers
+scikit-learn
+google-generativeai
+fastapi==0.110.0
+uvicorn[standard]==0.27.0
+ 
