@@ -73,6 +73,26 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
     if (user == null) return;
 
     try {
+      // Check if volunteer already has an active request
+      final activeCheck = await FirebaseFirestore.instance
+          .collection('helpRequests')
+          .where('assignedVolunteer', isEqualTo: user.uid)
+          .where('status', whereIn: ['accepted', 'in_progress'])
+          .limit(1)
+          .get();
+
+      if (activeCheck.docs.isNotEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('You already have an active request. Resolve it first before accepting a new one.'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
+
       // Transactional acceptance to prevent race conditions
       await FirebaseFirestore.instance.runTransaction((tx) async {
         final fresh = await tx.get(doc.reference);

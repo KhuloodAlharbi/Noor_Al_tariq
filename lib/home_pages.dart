@@ -1023,6 +1023,7 @@ class VolunteerHomePage extends StatefulWidget {
 class _VolunteerHomePageState extends State<VolunteerHomePage> {
   int _selectedIndex = 0;
   String? _volunteerName;
+  List<String> _myExpertise = [];
 
   @override
   void initState() {
@@ -1039,8 +1040,26 @@ class _VolunteerHomePageState extends State<VolunteerHomePage> {
         .doc(user.uid)
         .get();
 
-    if (doc.exists)
-      setState(() => _volunteerName = doc.data()?['name'] as String?);
+    if (doc.exists) {
+      _volunteerName = doc.data()?['name'] as String?;
+    }
+
+    // Load expertise from volunteer_applications
+    final appDoc = await FirebaseFirestore.instance
+        .collection('volunteer_applications')
+        .doc(user.uid)
+        .get();
+
+    if (appDoc.exists) {
+      _myExpertise = List<String>.from(appDoc.data()?['expertiseAreas'] ?? []);
+    }
+
+    if (_myExpertise.isEmpty) {
+      _myExpertise = ['medical', 'navigation', 'translation',
+          'general_guidance', 'emergency_response', 'crowd_management'];
+    }
+
+    if (mounted) setState(() {});
   }
 
   void _onItemTapped(int index) => setState(() => _selectedIndex = index);
@@ -1051,9 +1070,14 @@ class _VolunteerHomePageState extends State<VolunteerHomePage> {
     const background = Color(0xFF050608);
     const bottomBarColor = Color(0xFF121317);
     const accent = Color(0xFFF6B733);
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     final pages = <Widget>[
-      _VolunteerHomeTab(volunteerName: _volunteerName),
+      _VolunteerHomeTab(
+        volunteerName: _volunteerName,
+        myExpertise: _myExpertise,
+        onGoToRequests: () => setState(() => _selectedIndex = 1),
+      ),
       const VolunteerRequestsTab(),
       const _VolunteerChatsTab(),
       _PlaceholderTab(title: 'nav.map'.tr()),
@@ -1063,50 +1087,123 @@ class _VolunteerHomePageState extends State<VolunteerHomePage> {
     return Scaffold(
       backgroundColor: background,
       body: SafeArea(child: pages[_selectedIndex]),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: bottomBarColor,
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        selectedItemColor: accent,
-        unselectedItemColor: Colors.white70,
-        showUnselectedLabels: true,
-        selectedLabelStyle: TextStyle(fontSize: settings.fontSize - 2),
-        unselectedLabelStyle: TextStyle(fontSize: settings.fontSize - 3),
-        items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.home_rounded),
-            label: 'nav.home'.tr(),
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.assignment_rounded),
-            label: 'nav.requests'.tr(),
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.chat_bubble_rounded),
-            label: 'nav.chat'.tr(),
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.map_rounded),
-            label: 'nav.map'.tr(),
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.settings_rounded),
-            label: 'nav.settings'.tr(),
-          ),
-        ],
+      bottomNavigationBar: StreamBuilder<QuerySnapshot>(
+        // Listen for pending requests matching expertise for the badge count
+        stream: _myExpertise.isNotEmpty
+            ? FirebaseFirestore.instance
+                .collection('helpRequests')
+                .where('status', isEqualTo: 'pending')
+                .where('requestType', whereIn: _myExpertise)
+                .snapshots()
+            : null,
+        builder: (context, badgeSnap) {
+          // Filter out requests this volunteer has declined
+          final pendingCount = (badgeSnap.data?.docs ?? []).where((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            final declinedBy = List<String>.from(data['declinedBy'] ?? []);
+            return !declinedBy.contains(uid);
+          }).length;
+
+          return BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: bottomBarColor,
+            currentIndex: _selectedIndex,
+            onTap: _onItemTapped,
+            selectedItemColor: accent,
+            unselectedItemColor: Colors.white70,
+            showUnselectedLabels: true,
+            selectedLabelStyle: TextStyle(fontSize: settings.fontSize - 2),
+            unselectedLabelStyle: TextStyle(fontSize: settings.fontSize - 3),
+            items: [
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.home_rounded),
+                label: 'nav.home'.tr(),
+              ),
+              BottomNavigationBarItem(
+                icon: Badge(
+                  isLabelVisible: pendingCount > 0,
+                  label: Text('$pendingCount',
+                      style: const TextStyle(color: Colors.white, fontSize: 10)),
+                  backgroundColor: Colors.red,
+                  child: const Icon(Icons.assignment_rounded),
+                ),
+                label: 'nav.requests'.tr(),
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.chat_bubble_rounded),
+                label: 'nav.chat'.tr(),
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.map_rounded),
+                label: 'nav.map'.tr(),
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.settings_rounded),
+                label: 'nav.settings'.tr(),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
 // =============================================================================
-// VOLUNTEER HOME TAB
+// VOLUNTEER HOME TAB — live stats from Firestore
 // =============================================================================
 class _VolunteerHomeTab extends StatelessWidget {
   final String? volunteerName;
+  final List<String> myExpertise;
+  final VoidCallback onGoToRequests;
 
-  const _VolunteerHomeTab({this.volunteerName});
+  const _VolunteerHomeTab({
+    this.volunteerName,
+    this.myExpertise = const [],
+    required this.onGoToRequests,
+  });
+
+  String _typeLabel(String? t) {
+    const m = {
+      'medical': 'Medical',
+      'navigation': 'Navigation',
+      'translation': 'Translation',
+      'general_guidance': 'General Help',
+      'emergency_response': 'Emergency',
+      'crowd_management': 'Crowd Safety',
+    };
+    return m[t] ?? t ?? 'Help';
+  }
+
+  IconData _typeIcon(String? t) {
+    switch (t) {
+      case 'medical': return Icons.local_hospital_rounded;
+      case 'navigation': return Icons.navigation_rounded;
+      case 'translation': return Icons.translate_rounded;
+      case 'emergency_response': return Icons.emergency_rounded;
+      case 'crowd_management': return Icons.groups_rounded;
+      default: return Icons.help_outline_rounded;
+    }
+  }
+
+  Color _priorityColor(int p) {
+    switch (p) {
+      case 5: return Colors.red;
+      case 4: return Colors.deepOrange;
+      case 3: return Colors.orange;
+      case 2: return Colors.lightGreen;
+      default: return Colors.green;
+    }
+  }
+
+  String _timeAgo(Timestamp? ts) {
+    if (ts == null) return '';
+    final diff = DateTime.now().difference(ts.toDate());
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1115,82 +1212,175 @@ class _VolunteerHomeTab extends StatelessWidget {
     const accent = Color(0xFFF6B733);
 
     final displayName = volunteerName ?? 'Volunteer';
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final uid = currentUser?.uid ?? '';
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Welcome card
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('helpRequests')
+          .where('assignedVolunteer', isEqualTo: uid)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final allDocs = snapshot.data?.docs ?? [];
+
+        final resolvedCount = allDocs.where((d) {
+          final data = d.data() as Map<String, dynamic>;
+          return data['status'] == 'resolved';
+        }).length;
+
+        DocumentSnapshot? activeRequest;
+        for (final d in allDocs) {
+          final data = d.data() as Map<String, dynamic>;
+          final status = data['status'] as String? ?? '';
+          if (status == 'accepted' || status == 'in_progress') {
+            activeRequest = d;
+            break;
+          }
+        }
+
+        final bool isBusy = activeRequest != null;
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Welcome card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      radius: 24,
-                      backgroundColor: accent.withOpacity(0.2),
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: accent.withOpacity(0.2),
+                          child: Icon(
+                            Icons.volunteer_activism_rounded,
+                            color: accent,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'app_name'.tr(),
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: fs + 2,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'home.welcome'.tr(namedArgs: {'name': displayName}),
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: fs,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isBusy
+                                ? accent.withOpacity(0.2)
+                                : Colors.green.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.circle,
+                                color: isBusy ? accent : Colors.green,
+                                size: 8,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                isBusy ? 'Helping' : 'Available',
+                                style: TextStyle(
+                                  color: isBusy ? accent : Colors.green,
+                                  fontSize: fs - 2,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Row 1: Current Status banner
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isBusy
+                        ? accent.withOpacity(0.25)
+                        : Colors.green.withOpacity(0.25),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: isBusy
+                            ? accent.withOpacity(0.15)
+                            : Colors.green.withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
                       child: Icon(
-                        Icons.volunteer_activism_rounded,
-                        color: accent,
-                        size: 28,
+                        isBusy
+                            ? Icons.diversity_1_rounded
+                            : Icons.check_circle_rounded,
+                        color: isBusy ? accent : Colors.green,
+                        size: 24,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'app_name'.tr(),
+                            'Current Status',
                             style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: fs + 2,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'home.welcome'.tr(namedArgs: {'name': displayName}),
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: fs,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.circle,
-                            color: Colors.green,
-                            size: 8,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'volunteer_home.active'.tr(),
-                            style: TextStyle(
-                              color: Colors.green,
+                              color: Colors.white.withOpacity(0.45),
                               fontSize: fs - 2,
-                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            isBusy ? 'Helping a pilgrim' : 'Available',
+                            style: TextStyle(
+                              color: isBusy ? accent : Colors.green,
+                              fontSize: fs + 2,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
@@ -1198,84 +1388,334 @@ class _VolunteerHomeTab extends StatelessWidget {
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
+              ),
 
-          const SizedBox(height: 20),
+              const SizedBox(height: 12),
 
-          // Stats row
-          Row(
-            children: [
-              Expanded(
-                child: _StatCard(
-                  icon: Icons.people_rounded,
-                  label: 'volunteer_home.pilgrims_helped'.tr(),
-                  value: '0',
-                  color: accent,
+              // Row 2: Requests Completed banner
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.health_and_safety_rounded,
+                        color: Colors.white70,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Requests Completed',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.45),
+                              fontSize: fs - 2,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '$resolvedCount',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: fs + 2,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _StatCard(
-                  icon: Icons.check_circle_rounded,
-                  label: 'volunteer_home.requests_completed'.tr(),
-                  value: '0',
-                  color: Colors.green,
-                ),
-              ),
-            ],
-          ),
 
-          const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-          // Active requests section
-          Text(
-            'volunteer_home.active_requests'.tr(),
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: fs + 4,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              children: [
-                Icon(
-                  Icons.inbox_rounded,
-                  size: 48,
-                  color: Colors.white.withOpacity(0.3),
+              // ── ACTIVE REQUEST / INCOMING REQUESTS SECTION ──
+              if (isBusy) ...[
+                Text(
+                  'Active Request',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: fs + 4,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 12),
+                Builder(builder: (context) {
+                  final data = activeRequest!.data() as Map<String, dynamic>;
+                  final type = data['requestType'] as String? ?? 'general_guidance';
+                  final desc = data['description'] as String? ?? '';
+                  final pilgrimName = data['pilgrimName'] as String? ?? 'Pilgrim';
+                  final priority = data['priority'] as int? ?? 3;
+
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: accent.withOpacity(0.4), width: 1),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: accent.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(Icons.person_pin_circle_rounded,
+                                  color: accent, size: 22),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(_typeLabel(type),
+                                    style: TextStyle(color: Colors.white,
+                                      fontSize: fs, fontWeight: FontWeight.w600)),
+                                  const SizedBox(height: 2),
+                                  Text('Pilgrim: $pilgrimName',
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.5),
+                                      fontSize: fs - 2)),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: _priorityColor(priority).withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                priority >= 4 ? 'Urgent' : 'Active',
+                                style: TextStyle(
+                                  color: _priorityColor(priority),
+                                  fontSize: fs - 3, fontWeight: FontWeight.w600)),
+                            ),
+                          ],
+                        ),
+                        if (desc.isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          Text(desc, maxLines: 2, overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.6), fontSize: fs - 1)),
+                        ],
+                        const SizedBox(height: 14),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.push(context, MaterialPageRoute(
+                                builder: (_) => ChatPage(
+                                  requestId: activeRequest!.id, myRole: 'volunteer'),
+                              ));
+                            },
+                            icon: const Icon(Icons.chat_rounded, size: 18),
+                            label: Text('Open Chat',
+                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: fs)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: accent,
+                              foregroundColor: Colors.black,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ] else ...[
+                // ── INCOMING REQUESTS PREVIEW (when not busy) ──
                 Text(
-                  'volunteer_home.no_requests'.tr(),
+                  'Incoming Requests',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
-                    fontSize: fs,
+                    color: Colors.white,
+                    fontSize: fs + 4,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'volunteer_home.no_requests_subtitle'.tr(),
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.3),
-                    fontSize: fs - 2,
-                  ),
-                  textAlign: TextAlign.center,
+                const SizedBox(height: 12),
+
+                StreamBuilder<QuerySnapshot>(
+                  stream: myExpertise.isNotEmpty
+                      ? FirebaseFirestore.instance
+                          .collection('helpRequests')
+                          .where('status', isEqualTo: 'pending')
+                          .where('requestType', whereIn: myExpertise)
+                          .orderBy('createdAt', descending: true)
+                          .limit(5)
+                          .snapshots()
+                      : null,
+                  builder: (context, incomingSnap) {
+                    final incomingDocs = (incomingSnap.data?.docs ?? []).where((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      final declinedBy = List<String>.from(data['declinedBy'] ?? []);
+                      return !declinedBy.contains(uid);
+                    }).toList();
+
+                    if (incomingDocs.isEmpty) {
+                      // Waiting for requests — calm empty state
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                        decoration: BoxDecoration(
+                          color: cardColor,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          children: [
+                            Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: accent.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(Icons.notifications_none_rounded,
+                                  color: accent.withOpacity(0.5), size: 28),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Waiting for requests',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.6),
+                                fontSize: fs,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'You\'ll be notified when a pilgrim needs your help',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.3),
+                                fontSize: fs - 2,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    // Show compact preview cards
+                    return Column(
+                      children: [
+                        ...incomingDocs.map((doc) {
+                          final data = doc.data() as Map<String, dynamic>;
+                          final type = data['requestType'] as String? ?? 'general_guidance';
+                          final priority = data['priority'] as int? ?? 3;
+                          final pilgrimName = data['pilgrimName'] as String? ?? 'Pilgrim';
+                          final createdAt = data['createdAt'] as Timestamp?;
+
+                          return GestureDetector(
+                            onTap: onGoToRequests,
+                            child: Container(
+                              width: double.infinity,
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: cardColor,
+                                borderRadius: BorderRadius.circular(12),
+                                border: priority >= 4
+                                    ? Border.all(
+                                        color: _priorityColor(priority).withOpacity(0.3))
+                                    : null,
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: _priorityColor(priority).withOpacity(0.12),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(_typeIcon(type),
+                                        color: _priorityColor(priority), size: 18),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(_typeLabel(type),
+                                          style: TextStyle(color: Colors.white,
+                                            fontSize: fs - 1, fontWeight: FontWeight.w600)),
+                                        Text(pilgrimName,
+                                          style: TextStyle(
+                                            color: Colors.white.withOpacity(0.4),
+                                            fontSize: fs - 3)),
+                                      ],
+                                    ),
+                                  ),
+                                  Text(_timeAgo(createdAt),
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.3),
+                                      fontSize: fs - 3)),
+                                  const SizedBox(width: 8),
+                                  Icon(Icons.chevron_right_rounded,
+                                      color: Colors.white.withOpacity(0.2), size: 18),
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
+                        const SizedBox(height: 8),
+                        GestureDetector(
+                          onTap: onGoToRequests,
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: accent.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text('View all requests',
+                                  style: TextStyle(color: accent, fontSize: fs - 1,
+                                    fontWeight: FontWeight.w600)),
+                                const SizedBox(width: 6),
+                                Icon(Icons.arrow_forward_rounded,
+                                    color: accent, size: 16),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ],
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
