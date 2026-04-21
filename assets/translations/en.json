@@ -104,7 +104,8 @@
     "next_ritual_q": "What is the next ritual?",
     "prayer_times_q": "What are the prayer times?",
     "location_q": "Where am I now?",
-    "sample_answer": "The next ritual is Tawaf al-Ifadah. It is a mandatory part of Hajj."
+    "sample_answer": "The next ritual is Tawaf al-Ifadah. It is a mandatory part of Hajj.",
+    "error": "Sorry, I couldn't reach the server. Please check your connection and try again."
   },
   "settings": {
     "title": "Settings",

@@ -10,6 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
+import 'services/translation_service.dart';
 
 class ChatPage extends StatefulWidget {
   /// The Firestore doc ID under 'helpRequests'
@@ -689,7 +691,7 @@ class _InfoRow extends StatelessWidget {
 // =============================================================================
 // MESSAGE BUBBLE
 // =============================================================================
-class _MessageBubble extends StatelessWidget {
+class _MessageBubble extends StatefulWidget {
   final String text;
   final String time;
   final bool isMine;
@@ -702,61 +704,125 @@ class _MessageBubble extends StatelessWidget {
     required this.role,
   });
 
+  @override
+  State<_MessageBubble> createState() => _MessageBubbleState();
+}
+
+class _MessageBubbleState extends State<_MessageBubble> {
   static const _accent = Color(0xFFF6B733);
   static const _card = Color(0xFF17191E);
 
+  String? _translated;
+  bool _showOriginal = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _autoTranslate();
+  }
+
+  Future<void> _autoTranslate() async {
+    final myLang = context.locale.languageCode;
+    final msgLang = TranslationService.instance.detectLang(widget.text);
+    if (msgLang == myLang) return;
+    final result = await TranslationService.instance.translate(
+      widget.text,
+      msgLang,
+      myLang,
+    );
+    if (mounted && result != null) setState(() => _translated = result);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final displayText = _translated ?? widget.text;
+    final hasTranslation = _translated != null;
+
     return Align(
-      alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
+      alignment: widget.isMine ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         constraints: BoxConstraints(
           maxWidth: MediaQuery.of(context).size.width * 0.76,
         ),
         decoration: BoxDecoration(
-          color: isMine ? _accent : _card,
+          color: widget.isMine ? _accent : _card,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(isMine ? 16 : 4),
-            bottomRight: Radius.circular(isMine ? 4 : 16),
+            bottomLeft: Radius.circular(widget.isMine ? 16 : 4),
+            bottomRight: Radius.circular(widget.isMine ? 4 : 16),
           ),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
         child: Column(
-          crossAxisAlignment: isMine
+          crossAxisAlignment: widget.isMine
               ? CrossAxisAlignment.end
               : CrossAxisAlignment.start,
           children: [
-            // Role label (subtle) for the other person's messages
-            if (!isMine)
+            // Role label for the other person's messages
+            if (!widget.isMine)
               Padding(
                 padding: const EdgeInsets.only(bottom: 3),
                 child: Text(
-                  role == 'volunteer' ? 'Volunteer' : 'Pilgrim',
+                  widget.role == 'volunteer' ? 'Volunteer' : 'Pilgrim',
                   style: TextStyle(
-                    color: _accent.withOpacity(0.8),
+                    color: _accent.withValues(alpha: 0.8),
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
+
+            // Main text (translated if available)
             Text(
-              text,
+              displayText,
               style: TextStyle(
-                color: isMine ? Colors.black : Colors.white,
+                color: widget.isMine ? Colors.black : Colors.white,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
             ),
+
+            // Original text section
+            if (hasTranslation) ...[
+              const SizedBox(height: 6),
+              GestureDetector(
+                onTap: () => setState(() => _showOriginal = !_showOriginal),
+                child: Text(
+                  _showOriginal ? 'Hide original' : 'See original',
+                  style: TextStyle(
+                    color: widget.isMine
+                        ? Colors.black45
+                        : Colors.white38,
+                    fontSize: 10,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+              if (_showOriginal)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    widget.text,
+                    style: TextStyle(
+                      color: widget.isMine
+                          ? Colors.black45
+                          : Colors.white38,
+                      fontSize: 11,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+            ],
+
             const SizedBox(height: 3),
             Text(
-              time,
+              widget.time,
               style: TextStyle(
-                color: isMine
-                    ? Colors.black.withOpacity(0.55)
-                    : Colors.white.withOpacity(0.4),
+                color: widget.isMine
+                    ? Colors.black.withValues(alpha: 0.55)
+                    : Colors.white.withValues(alpha: 0.4),
                 fontSize: 10,
               ),
             ),

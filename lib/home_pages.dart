@@ -6,6 +6,9 @@
 // =============================================================================
 
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -219,7 +222,9 @@ class _HajjHomePageState extends State<HajjHomePage> {
 
     return Scaffold(
       backgroundColor: background,
-      body: SafeArea(child: pages[_selectedIndex]),
+      body: SafeArea(
+        child: IndexedStack(index: _selectedIndex, children: pages),
+      ),
       extendBody: true,
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
@@ -740,41 +745,113 @@ class _ChatbotTab extends StatefulWidget {
 
 class _ChatbotTabState extends State<_ChatbotTab> {
   final TextEditingController _controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   late List<_ChatMessage> _messages;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _messages = [
-      _ChatMessage(fromUser: false, text: 'chatbot.greeting'.tr()),
-      _ChatMessage(fromUser: true, text: 'chatbot.suggest_ritual'.tr()),
-      _ChatMessage(fromUser: false, text: 'chatbot.sample_answer'.tr()),
-    ];
+    _messages = [];
+    _loadMessages();
   }
 
-  void _sendMessage() async {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
+  Future<void> _loadMessages() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? 'default';
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('chat_history_$uid');
+    if (!mounted) return;
+    if (raw != null) {
+      final list = jsonDecode(raw) as List;
+      setState(() {
+        _messages = list.map((e) => _ChatMessage.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+      });
+    } else {
+      setState(() {
+        _messages = [_ChatMessage(fromUser: false, text: 'chatbot.greeting'.tr())];
+      });
+    }
+    _scrollToBottom();
+  }
+
+  Future<void> _saveMessages() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? 'default';
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('chat_history_$uid', jsonEncode(_messages.map((m) => m.toJson()).toList()));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  Future<void> _sendMessage([String? overrideText]) async {
+    final text = (overrideText ?? _controller.text).trim();
+    if (text.isEmpty || _isLoading) return;
 
     setState(() {
       _messages.add(_ChatMessage(fromUser: true, text: text));
       _controller.clear();
+      _isLoading = true;
     });
+    _scrollToBottom();
 
-    // Call backend
-    final api = ApiService();
-    final reply = await api.askChatbot(text);
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid ?? 'default';
+      final reply = await ApiService().askChatbot(text, sessionId: uid);
+      if (mounted) {
+        setState(() {
+          _messages.add(_ChatMessage(fromUser: false, text: reply));
+        });
+        _saveMessages();
+        _scrollToBottom();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _messages.add(
+            _ChatMessage(fromUser: false, text: 'chatbot.error'.tr()),
+          );
+        });
+        _saveMessages();
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
-    setState(() {
-      _messages.add(_ChatMessage(fromUser: false, text: reply));
-    });
+  Future<void> _clearChat() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? 'default';
+    try {
+      await ApiService().resetSession(uid);
+    } catch (_) {}
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('chat_history_$uid');
+    if (mounted) {
+      setState(() {
+        _messages = [_ChatMessage(fromUser: false, text: 'chatbot.greeting'.tr())];
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final fs = context.watch<AppSettingsProvider>().fontSize;
     const background = Color(0xFF050608);
-    const panelColor = Color(0xFF17191E);
     const accent = Color(0xFFF6B733);
 
     return Scaffold(
@@ -782,159 +859,285 @@ class _ChatbotTabState extends State<_ChatbotTab> {
       body: SafeArea(
         child: Column(
           children: [
+            // Header
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              color: background,
+              padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+              decoration: const BoxDecoration(
+                color: Color(0xFF0D0F14),
+                border: Border(
+                  bottom: BorderSide(color: Color(0xFF1E2128), width: 0.8),
+                ),
+              ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'chatbot.title'.tr(),
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: fs + 4,
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A1000),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: accent, width: 1.5),
+                    ),
+                    child: const Icon(
+                      Icons.auto_awesome_rounded,
+                      color: accent,
+                      size: 20,
                     ),
                   ),
-                  const Icon(Icons.settings_outlined, color: Colors.white70),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'chatbot.title'.tr(),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: fs + 2,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            Container(
+                              width: 7,
+                              height: 7,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF4CAF50),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              'Online',
+                              style: TextStyle(
+                                color: Colors.white38,
+                                fontSize: fs - 4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Clear chat',
+                    icon: const Icon(
+                      Icons.refresh_rounded,
+                      color: Colors.white38,
+                      size: 22,
+                    ),
+                    onPressed: _clearChat,
+                  ),
                 ],
               ),
             ),
-            Expanded(
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
-                decoration: BoxDecoration(
-                  color: panelColor,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: _messages.length,
-                        padding: const EdgeInsets.only(bottom: 12),
-                        itemBuilder: (context, index) {
-                          final msg = _messages[index];
-                          final align = msg.fromUser
-                              ? Alignment.centerRight
-                              : Alignment.centerLeft;
-                          final bubbleColor = msg.fromUser
-                              ? const Color(0xFF3B2B22)
-                              : const Color(0xFF2A2D32);
 
-                          return Align(
-                            alignment: align,
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(
-                                vertical: 4,
-                                horizontal: 4,
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: bubbleColor,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Text(
-                                msg.text,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: fs,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.only(bottom: 8),
+            // Messages
+            Expanded(
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                itemCount: _messages.length + (_isLoading ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index == _messages.length) {
+                    return const _TypingIndicator();
+                  }
+                  final msg = _messages[index];
+                  final timeStr =
+                      '${msg.time.hour.toString().padLeft(2, '0')}:${msg.time.minute.toString().padLeft(2, '0')}';
+
+                  if (msg.fromUser) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
                       child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          _SuggestionChip(
-                            label: 'chatbot.suggest_ritual'.tr(),
-                            onTap: () => setState(
-                              () => _messages.add(
-                                _ChatMessage(
-                                  fromUser: true,
-                                  text: 'chatbot.next_ritual_q'.tr(),
+                          const SizedBox(width: 56),
+                          Flexible(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 10,
+                                  ),
+                                  decoration: const BoxDecoration(
+                                    color: accent,
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(18),
+                                      topRight: Radius.circular(18),
+                                      bottomLeft: Radius.circular(18),
+                                      bottomRight: Radius.circular(4),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    msg.text,
+                                    style: TextStyle(
+                                      color: Color(0xFF0D0F14),
+                                      fontSize: fs,
+                                      height: 1.5,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ),
-                          _SuggestionChip(
-                            label: 'chatbot.suggest_prayer'.tr(),
-                            onTap: () => setState(
-                              () => _messages.add(
-                                _ChatMessage(
-                                  fromUser: true,
-                                  text: 'chatbot.prayer_times_q'.tr(),
+                                const SizedBox(height: 4),
+                                Text(
+                                  timeStr,
+                                  style: TextStyle(
+                                    color: Colors.white24,
+                                    fontSize: fs - 4,
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ),
-                          _SuggestionChip(
-                            label: 'chatbot.suggest_location'.tr(),
-                            onTap: () => setState(
-                              () => _messages.add(
-                                _ChatMessage(
-                                  fromUser: true,
-                                  text: 'chatbot.location_q'.tr(),
-                                ),
-                              ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _controller,
-                            style: TextStyle(color: Colors.white, fontSize: fs),
-                            decoration: InputDecoration(
-                              hintText: 'chatbot.ask_placeholder'.tr(),
-                              hintStyle: TextStyle(
-                                color: Colors.white54,
-                                fontSize: fs,
-                              ),
-                              filled: true,
-                              fillColor: const Color(0xFF101218),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
-                                borderSide: BorderSide.none,
-                              ),
+                    );
+                  } else {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1A1000),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: accent, width: 1),
                             ),
-                            onSubmitted: (_) => _sendMessage(),
+                            child: const Icon(
+                              Icons.auto_awesome_rounded,
+                              color: accent,
+                              size: 15,
+                            ),
                           ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 10,
+                                  ),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF141720),
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(18),
+                                      topRight: Radius.circular(18),
+                                      bottomRight: Radius.circular(18),
+                                      bottomLeft: Radius.circular(4),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    msg.text,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: fs,
+                                      height: 1.5,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  timeStr,
+                                  style: TextStyle(
+                                    color: Colors.white24,
+                                    fontSize: fs - 4,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 56),
+                        ],
+                      ),
+                    );
+                  }
+                },
+              ),
+            ),
+
+            // Input bar
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+              decoration: const BoxDecoration(
+                color: Color(0xFF0D0F14),
+                border: Border(
+                  top: BorderSide(color: Color(0xFF1E2128), width: 0.8),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF17191E),
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(
+                          color: const Color(0xFF2A2D35),
+                          width: 1,
                         ),
-                        const SizedBox(width: 8),
-                        Container(
-                          decoration: const BoxDecoration(
-                            color: accent,
+                      ),
+                      child: TextField(
+                        controller: _controller,
+                        style: TextStyle(color: Colors.white, fontSize: fs),
+                        maxLines: null,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => _sendMessage(),
+                        decoration: InputDecoration(
+                          hintText: 'chatbot.ask_placeholder'.tr(),
+                          hintStyle: TextStyle(
+                            color: Colors.white38,
+                            fontSize: fs,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 12,
+                          ),
+                          border: InputBorder.none,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: _controller,
+                    builder: (_, val, __) {
+                      final active = val.text.trim().isNotEmpty && !_isLoading;
+                      return GestureDetector(
+                        onTap: active ? _sendMessage : null,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 46,
+                          height: 46,
+                          decoration: BoxDecoration(
+                            color: active
+                                ? accent
+                                : const Color(0xFF1E2128),
                             shape: BoxShape.circle,
                           ),
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.arrow_upward_rounded,
-                              color: Colors.black,
-                            ),
-                            onPressed: _sendMessage,
+                          child: Icon(
+                            Icons.arrow_upward_rounded,
+                            color: active ? Colors.black : Colors.white24,
+                            size: 22,
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
           ],
@@ -947,33 +1150,106 @@ class _ChatbotTabState extends State<_ChatbotTab> {
 class _ChatMessage {
   final bool fromUser;
   final String text;
+  final DateTime time;
 
-  const _ChatMessage({required this.fromUser, required this.text});
+  _ChatMessage({required this.fromUser, required this.text, DateTime? time})
+      : time = time ?? DateTime.now();
+
+  Map<String, dynamic> toJson() => {
+        'fromUser': fromUser,
+        'text': text,
+        'time': time.millisecondsSinceEpoch,
+      };
+
+  factory _ChatMessage.fromJson(Map<String, dynamic> j) => _ChatMessage(
+        fromUser: j['fromUser'] as bool,
+        text: j['text'] as String,
+        time: DateTime.fromMillisecondsSinceEpoch(j['time'] as int),
+      );
 }
 
-class _SuggestionChip extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
+class _TypingIndicator extends StatefulWidget {
+  const _TypingIndicator();
 
-  const _SuggestionChip({required this.label, required this.onTap});
+  @override
+  State<_TypingIndicator> createState() => _TypingIndicatorState();
+}
+
+class _TypingIndicatorState extends State<_TypingIndicator>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    const accent = Color(0xFFF6B733);
     return Padding(
-      padding: const EdgeInsets.only(right: 8.0),
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: const Color(0xFF101218),
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1000),
+              shape: BoxShape.circle,
+              border: Border.all(color: accent, width: 1),
+            ),
+            child: const Icon(Icons.auto_awesome_rounded, color: accent, size: 15),
           ),
-          child: Text(
-            label,
-            style: const TextStyle(color: Colors.white, fontSize: 12),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+            decoration: const BoxDecoration(
+              color: Color(0xFF141720),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(18),
+                topRight: Radius.circular(18),
+                bottomRight: Radius.circular(18),
+                bottomLeft: Radius.circular(4),
+              ),
+            ),
+            child: AnimatedBuilder(
+              animation: _controller,
+              builder: (_, __) => Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(3, (i) {
+                  final t = (_controller.value - i * 0.18) % 1.0;
+                  final opacity = (sin(t * 2 * pi) * 0.5 + 0.5).clamp(0.2, 1.0);
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 3),
+                    child: Opacity(
+                      opacity: opacity,
+                      child: Container(
+                        width: 7,
+                        height: 7,
+                        decoration: const BoxDecoration(
+                          color: accent,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

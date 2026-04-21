@@ -46,21 +46,18 @@ app.*.map.json
 
 
 # ============================
-# MACHINE LEARNING FILES (DO NOT TRACK)
+# MACHINE LEARNING FILES
 # ============================
+# Ignore ML artifacts everywhere EXCEPT backend/ (committed intentionally)
 noor_backend/*.npy
 noor_backend/*.parquet
 noor_backend/*.joblib
 noor_backend/models/
 
-# Also ignore any global ML artifacts
-*.npy
-*.parquet
-*.joblib
-
 # ============================
 # API KEYS / ENV FILES
 # ============================
+.env
+backend/.env
 *.env
-.env.*
 lib/api_keys.dart
