@@ -1256,27 +1256,6 @@ class _TypingIndicatorState extends State<_TypingIndicator>
 }
 
 // =============================================================================
-// PLACEHOLDER TAB
-// =============================================================================
-class _PlaceholderTab extends StatelessWidget {
-  final String title;
-
-  const _PlaceholderTab({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    final fs = context.watch<AppSettingsProvider>().fontSize;
-    return Center(
-      child: Text(
-        '$title\n(Coming soon)',
-        textAlign: TextAlign.center,
-        style: TextStyle(color: Colors.white70, fontSize: fs + 4),
-      ),
-    );
-  }
-}
-
-// =============================================================================
 // HAJJ SETTINGS TAB
 // =============================================================================
 class _HajjSettingsTab extends StatelessWidget {
@@ -1356,7 +1335,7 @@ class _VolunteerHomePageState extends State<VolunteerHomePage> {
       ),
       const VolunteerRequestsTab(),
       const _VolunteerChatsTab(),
-      _PlaceholderTab(title: 'nav.map'.tr()),
+      const MapPage(),
       const _VolunteerSettingsTab(),
     ];
 

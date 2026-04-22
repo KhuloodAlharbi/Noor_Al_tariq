@@ -40,8 +40,9 @@ class _MapPageState extends State<MapPage> {
 
   // ---------- PROXIMITY ALERT STATE (FR8.4) ----------
   Timer? _proximityTimer;
-  final Set<String> _alertedZoneIds = {}; // zones we already warned about
-  static const double _alertRadius = 150; // meters — how close before alert
+  final Set<String> _alertedZoneIds = {};
+  static const double _alertRadius = 150;
+  LocationPermission? _cachedPermission; // cache permission — don't check every tick
 
   // ---------- PLACE CATEGORY FILTER ----------
   String _selectedCategory = "all";
@@ -50,16 +51,23 @@ class _MapPageState extends State<MapPage> {
   @override
   void initState() {
     super.initState();
-    _refreshCrowdData();
+    // Delay first load so Google Maps finishes rendering first
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      _refreshCrowdData();
+    });
     _crowdRefreshTimer = Timer.periodic(
-      const Duration(seconds: 30),
+      const Duration(seconds: 60), // reduced from 30s to ease emulator load
       (_) => _refreshCrowdData(),
     );
-    // Check user proximity to red zones every 10 seconds
-    _proximityTimer = Timer.periodic(
-      const Duration(seconds: 10),
-      (_) => _checkProximityAlert(),
-    );
+    // Start proximity checks after 15s delay — let the map settle first
+    Future.delayed(const Duration(seconds: 15), () {
+      if (!mounted) return;
+      _proximityTimer = Timer.periodic(
+        const Duration(seconds: 30), // reduced from 10s to avoid GPS hammering
+        (_) => _checkProximityAlert(),
+      );
+    });
   }
 
   @override
@@ -223,16 +231,30 @@ class _MapPageState extends State<MapPage> {
 
   // ---------- LOCATION ----------
   Future<Position?> _getCurrentPosition() async {
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
+    // Use cached permission to avoid repeated OS calls every timer tick
+    _cachedPermission ??= await Geolocator.checkPermission();
+    if (_cachedPermission == LocationPermission.denied ||
+        _cachedPermission == LocationPermission.deniedForever) {
+      _cachedPermission = await Geolocator.requestPermission();
+      if (_cachedPermission == LocationPermission.denied ||
+          _cachedPermission == LocationPermission.deniedForever) {
         return null;
       }
     }
-    return await Geolocator.getCurrentPosition();
+    try {
+      // getLastKnownPosition is instant — no GPS hardware wait
+      final last = await Geolocator.getLastKnownPosition();
+      if (last != null) return last;
+      // Only fall back to full GPS if no cached position, with a hard timeout
+      return await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.low,
+          timeLimit: Duration(seconds: 5),
+        ),
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> _goToMyLocation() async {
