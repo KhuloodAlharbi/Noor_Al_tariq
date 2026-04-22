@@ -723,7 +723,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
 
   Future<void> _autoTranslate() async {
     final myLang = context.locale.languageCode;
-    final msgLang = TranslationService.instance.detectLang(widget.text);
+    final msgLang = await TranslationService.instance.identifyLanguage(widget.text);
     if (msgLang == myLang) return;
     final result = await TranslationService.instance.translate(
       widget.text,

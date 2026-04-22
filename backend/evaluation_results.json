@@ -1,0 +1,9 @@
+{
+  "scores": {
+    "Context Precision": 0.6348,
+    "Faithfulness": 0.8155,
+    "Answer Relevancy": 0.8759
+  },
+  "n_questions": 29,
+  "method": "LLM-as-Judge (Claude)"
+}

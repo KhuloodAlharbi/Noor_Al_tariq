@@ -1,4 +1,5 @@
 import 'package:google_mlkit_translation/google_mlkit_translation.dart';
+import 'package:google_mlkit_language_id/google_mlkit_language_id.dart';
 
 class TranslationService {
   TranslationService._();
@@ -7,31 +8,64 @@ class TranslationService {
   final _cache = <String, String>{};
   final _translators = <String, OnDeviceTranslator>{};
   final _downloadedModels = <String>{};
+  final _languageIdentifier = LanguageIdentifier(confidenceThreshold: 0.4);
 
-  bool isArabic(String text) =>
-      text.runes.any((r) => r >= 0x0600 && r <= 0x06FF);
+  // Normalize 'zh-Hans', 'zh-Hant', 'pt-BR' → 'zh', 'pt', etc.
+  String _base(String code) => code.split('-').first.toLowerCase();
 
-  String detectLang(String text) => isArabic(text) ? 'ar' : 'en';
+  // Strip lone surrogates / null bytes that crash JNI NewStringUTF
+  String _sanitize(String text) {
+    final buf = StringBuffer();
+    for (final rune in text.runes) {
+      if (rune != 0 && !(rune >= 0xD800 && rune <= 0xDFFF)) {
+        buf.writeCharCode(rune);
+      }
+    }
+    return buf.toString();
+  }
+
+  // Detect language of any text using ML Kit
+  Future<String> identifyLanguage(String text) async {
+    if (text.trim().isEmpty) return 'en';
+    try {
+      final result = await _languageIdentifier.identifyLanguage(_sanitize(text));
+      if (result == 'und' || result.isEmpty) return 'en';
+      return _base(result);
+    } catch (_) {
+      return 'en';
+    }
+  }
 
   Future<String?> translate(String text, String from, String to) async {
-    if (from == to || text.trim().isEmpty) return null;
-    final cacheKey = '$from|$to|$text';
+    final fromBase = _base(from);
+    final toBase = _base(to);
+    if (fromBase == toBase || text.trim().isEmpty) return null;
+
+    final safe = _sanitize(text);
+    final cacheKey = '$fromBase|$toBase|$safe';
     if (_cache.containsKey(cacheKey)) return _cache[cacheKey];
 
     try {
-      final srcLang =
-          from == 'ar' ? TranslateLanguage.arabic : TranslateLanguage.english;
-      final tgtLang =
-          to == 'ar' ? TranslateLanguage.arabic : TranslateLanguage.english;
+      final srcLang = TranslateLanguage.values.firstWhere(
+        (l) => l.bcpCode == fromBase,
+        orElse: () => TranslateLanguage.english,
+      );
+      final tgtLang = TranslateLanguage.values.firstWhere(
+        (l) => l.bcpCode == toBase,
+        orElse: () => TranslateLanguage.english,
+      );
 
-      final translatorKey = '$from→$to';
+      // If neither language is supported, bail out
+      if (srcLang == tgtLang) return null;
+
+      final translatorKey = '$fromBase→$toBase';
       _translators[translatorKey] ??= OnDeviceTranslator(
         sourceLanguage: srcLang,
         targetLanguage: tgtLang,
       );
 
       final manager = OnDeviceTranslatorModelManager();
-      for (final code in [from, to]) {
+      for (final code in [fromBase, toBase]) {
         if (!_downloadedModels.contains(code)) {
           final ok = await manager.isModelDownloaded(code);
           if (!ok) await manager.downloadModel(code);
@@ -39,8 +73,7 @@ class TranslationService {
         }
       }
 
-      final result =
-          await _translators[translatorKey]!.translateText(text);
+      final result = await _translators[translatorKey]!.translateText(safe);
       _cache[cacheKey] = result;
       return result;
     } catch (_) {
@@ -49,6 +82,7 @@ class TranslationService {
   }
 
   void dispose() {
+    _languageIdentifier.close();
     for (final t in _translators.values) {
       t.close();
     }
