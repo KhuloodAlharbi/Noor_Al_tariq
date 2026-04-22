@@ -288,42 +288,31 @@ class _AuthPageState extends State<AuthPage> {
   // =========================================================================
   @override
   Widget build(BuildContext context) {
-    final cardColor = Theme.of(context).colorScheme.surface;
-    final accent = Colors.amber;
+    const accent = Color(0xFFC9973A);
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
+      backgroundColor: const Color(0xFFF7F4EF),
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: const Color(0xFFF7F4EF),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: Colors.white,
-          ),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1A1A2E)),
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF17212B), Color(0xFF0D1017)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Card(
-                  color: cardColor.withOpacity(0.95),
-                  elevation: 8,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Card(
+                color: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  side: const BorderSide(color: Color(0xFFE8E4DE)),
+                ),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,
@@ -332,6 +321,13 @@ class _AuthPageState extends State<AuthPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        // Logo
+                        Image.asset(
+                          'assets/images/logo.png',
+                          height: 56,
+                        ),
+                        const SizedBox(height: 12),
+
                         // Title
                         Text(
                           _titleText,
@@ -376,9 +372,9 @@ class _AuthPageState extends State<AuthPage> {
                                 Expanded(
                                   child: Text(
                                     'After signing up, you\'ll complete an application form for admin review.',
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 12,
-                                      color: Colors.white.withOpacity(0.8),
+                                      color: Color(0xFF6B6B80),
                                     ),
                                   ),
                                 ),
@@ -506,7 +502,7 @@ class _AuthPageState extends State<AuthPage> {
                                       vertical: 12,
                                     ),
                                     backgroundColor: accent,
-                                    foregroundColor: Colors.black,
+                                    foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(16),
                                     ),
@@ -550,7 +546,6 @@ class _AuthPageState extends State<AuthPage> {
             ),
           ),
         ),
-      ),
     );
   }
 }

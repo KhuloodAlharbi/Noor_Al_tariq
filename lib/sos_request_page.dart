@@ -235,7 +235,7 @@ class _SOSRequestPageState extends State<SOSRequestPage>
       case 'cancelled':
         return Colors.grey;
       default:
-        return Colors.white54;
+        return const Color(0xFF9999AA);
     }
   }
 
@@ -279,26 +279,23 @@ class _SOSRequestPageState extends State<SOSRequestPage>
 
   @override
   Widget build(BuildContext context) {
-    const background = Color(0xFF050509);
-    const cardColor = Color(0xFF17171F);
-    const accent = Color(0xFFF6B645);
+    const background = Color(0xFFF7F4EF);
+    const cardColor = Color(0xFFFFFFFF);
+    const accent = Color(0xFFC9973A);
     final currentUser = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
       backgroundColor: background,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: Colors.white,
-          ),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1A1A2E)),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Request Help',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          style: TextStyle(color: Color(0xFF1A1A2E), fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
       ),
@@ -353,15 +350,12 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                       textDirection: _selectedLanguage == 'ar-SA'
                           ? TextDirection.rtl
                           : TextDirection.ltr,
-                      style: const TextStyle(color: Colors.white, fontSize: 15),
+                      style: const TextStyle(color: Color(0xFF1A1A2E), fontSize: 15),
                       decoration: InputDecoration(
                         hintText: _selectedLanguage == 'ar-SA'
                             ? '\u0627\u0643\u062A\u0628 \u0645\u0634\u0643\u0644\u062A\u0643 \u0647\u0646\u0627...'
                             : 'Describe your problem...',
-                        hintStyle: TextStyle(
-                          color: Colors.white.withOpacity(0.3),
-                          fontSize: 14,
-                        ),
+                        hintStyle: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 14),
                         border: InputBorder.none,
                         isDense: true,
                         contentPadding: EdgeInsets.zero,
@@ -460,7 +454,7 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                                       height: 22,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2.5,
-                                        color: Colors.black,
+                                        color: Colors.white,
                                       ),
                                     )
                                   : const Row(
@@ -469,14 +463,14 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                                       children: [
                                         Icon(
                                           Icons.send_rounded,
-                                          color: Colors.black,
+                                          color: Colors.white,
                                           size: 20,
                                         ),
                                         SizedBox(width: 6),
                                         Text(
                                           'Send SOS Request',
                                           style: TextStyle(
-                                            color: Colors.black,
+                                            color: Colors.white,
                                             fontSize: 15,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -500,23 +494,19 @@ class _SOSRequestPageState extends State<SOSRequestPage>
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  Expanded(
-                    child: Container(height: 0.5, color: Colors.white12),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  const Expanded(child: Divider(color: Color(0xFFE0DBD3))),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
                     child: Text(
                       'My Requests',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.5),
+                        color: Color(0xFF9999AA),
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                  Expanded(
-                    child: Container(height: 0.5, color: Colors.white12),
-                  ),
+                  const Expanded(child: Divider(color: Color(0xFFE0DBD3))),
                 ],
               ),
             ),
@@ -529,7 +519,7 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                   ? const Center(
                       child: Text(
                         'Please log in',
-                        style: TextStyle(color: Colors.white54),
+                        style: TextStyle(color: Color(0xFF6B6B80)),
                       ),
                     )
                   : StreamBuilder<QuerySnapshot>(
@@ -551,24 +541,24 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.inbox_rounded,
                                   size: 48,
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Color(0xFFCCCCDD),
                                 ),
                                 const SizedBox(height: 12),
-                                Text(
+                                const Text(
                                   'No requests yet',
                                   style: TextStyle(
-                                    color: Colors.white.withOpacity(0.4),
+                                    color: Color(0xFF6B6B80),
                                     fontSize: 14,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
-                                Text(
+                                const Text(
                                   'Your help requests will appear here',
                                   style: TextStyle(
-                                    color: Colors.white.withOpacity(0.25),
+                                    color: Color(0xFF9999AA),
                                     fontSize: 12,
                                   ),
                                 ),
@@ -603,6 +593,13 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                               decoration: BoxDecoration(
                                 color: cardColor,
                                 borderRadius: BorderRadius.circular(14),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color(0x0D000000),
+                                    blurRadius: 16,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -615,7 +612,7 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                                         decoration: BoxDecoration(
                                           color: _statusColor(
                                             status,
-                                          ).withOpacity(0.15),
+                                          ).withValues(alpha: 0.15),
                                           borderRadius: BorderRadius.circular(
                                             8,
                                           ),
@@ -635,7 +632,7 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                                             Text(
                                               _typeLabel(type),
                                               style: const TextStyle(
-                                                color: Colors.white,
+                                                color: Color(0xFF1A1A2E),
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.w600,
                                               ),
@@ -645,10 +642,8 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                                               desc,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                color: Colors.white.withOpacity(
-                                                  0.5,
-                                                ),
+                                              style: const TextStyle(
+                                                color: Color(0xFF9999AA),
                                                 fontSize: 12,
                                               ),
                                             ),
@@ -657,8 +652,8 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                                       ),
                                       Text(
                                         timeStr,
-                                        style: TextStyle(
-                                          color: Colors.white.withOpacity(0.3),
+                                        style: const TextStyle(
+                                          color: Color(0xFF9999AA),
                                           fontSize: 11,
                                         ),
                                       ),
@@ -678,7 +673,7 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                                         decoration: BoxDecoration(
                                           color: _statusColor(
                                             status,
-                                          ).withOpacity(0.15),
+                                          ).withValues(alpha: 0.15),
                                           borderRadius: BorderRadius.circular(
                                             20,
                                           ),
@@ -728,15 +723,11 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                                               vertical: 6,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: const Color(
-                                                0xFFF6B733,
-                                              ).withOpacity(0.15),
+                                              color: const Color(0xFFC9973A).withValues(alpha: 0.15),
                                               borderRadius:
                                                   BorderRadius.circular(10),
                                               border: Border.all(
-                                                color: const Color(
-                                                  0xFFF6B733,
-                                                ).withOpacity(0.5),
+                                                color: const Color(0xFFC9973A).withValues(alpha: 0.5),
                                               ),
                                             ),
                                             child: Row(
@@ -744,14 +735,14 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                                               children: const [
                                                 Icon(
                                                   Icons.chat_bubble_outline,
-                                                  color: Color(0xFFF6B733),
+                                                  color: Color(0xFFC9973A),
                                                   size: 13,
                                                 ),
                                                 SizedBox(width: 5),
                                                 Text(
                                                   'Open Chat',
                                                   style: TextStyle(
-                                                    color: Color(0xFFF6B733),
+                                                    color: Color(0xFFC9973A),
                                                     fontSize: 11,
                                                     fontWeight: FontWeight.w600,
                                                   ),
@@ -765,10 +756,8 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                                           status != 'in_progress')
                                         Text(
                                           'Volunteer: $volunteerName',
-                                          style: TextStyle(
-                                            color: Colors.white.withOpacity(
-                                              0.4,
-                                            ),
+                                          style: const TextStyle(
+                                            color: Color(0xFF9999AA),
                                             fontSize: 11,
                                           ),
                                         ),
@@ -785,9 +774,7 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                                               vertical: 4,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: Colors.red.withOpacity(
-                                                0.1,
-                                              ),
+                                              color: Colors.red.withValues(alpha: 0.1),
                                               borderRadius:
                                                   BorderRadius.circular(8),
                                             ),
@@ -829,7 +816,7 @@ class _SOSRequestPageState extends State<SOSRequestPage>
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.black : Colors.white.withOpacity(0.5),
+            color: isSelected ? Colors.white : const Color(0xFF6B6B80),
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             fontSize: 13,
           ),

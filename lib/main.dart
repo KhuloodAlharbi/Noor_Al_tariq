@@ -49,9 +49,10 @@ class NoorAlTariqApp extends StatelessWidget {
     final settings = context.watch<AppSettingsProvider>();
     final isArabic = context.locale == const Locale('ar');
 
-    const background = Color(0xFF050509);
-    const cardColor  = Color(0xFF17171F);
-    const accent     = Color(0xFFF6B645);
+    const background = Color(0xFFF7F4EF);
+    const cardColor  = Color(0xFFFFFFFF);
+    const accent     = Color(0xFFC9973A);
+    const textPrimary = Color(0xFF1A1A2E);
 
     return MaterialApp(
       title: 'app_name'.tr(),
@@ -60,18 +61,20 @@ class NoorAlTariqApp extends StatelessWidget {
       supportedLocales: context.supportedLocales,
       localizationsDelegates: context.localizationDelegates,
       theme: ThemeData(
-        brightness: Brightness.dark,
+        brightness: Brightness.light,
         scaffoldBackgroundColor: background,
-        fontFamily: isArabic ? null : 'Roboto', 
-        colorScheme: const ColorScheme.dark(
+        fontFamily: isArabic ? null : 'Roboto',
+        colorScheme: const ColorScheme.light(
           primary: accent,
           secondary: accent,
           surface: cardColor,
+          onPrimary: Colors.white,
+          onSurface: textPrimary,
         ),
-        
+
         // Apply dynamic font size to global text theme
         textTheme: _buildTextTheme(settings.fontSize),
-        
+
         appBarTheme: AppBarTheme(
           backgroundColor: background,
           elevation: 0,
@@ -79,18 +82,19 @@ class NoorAlTariqApp extends StatelessWidget {
           titleTextStyle: TextStyle(
             fontSize: settings.fontSize + 6,
             fontWeight: FontWeight.w600,
-            color: Colors.white,
+            color: textPrimary,
           ),
+          iconTheme: const IconThemeData(color: textPrimary),
         ),
 
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: accent,
-            foregroundColor: Colors.black,
+            foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
             textStyle: TextStyle(
-              fontWeight: FontWeight.w600, 
+              fontWeight: FontWeight.w600,
               fontSize: settings.fontSize + 2,
             ),
           ),
@@ -100,12 +104,16 @@ class NoorAlTariqApp extends StatelessWidget {
           filled: true,
           fillColor: cardColor,
           border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0xFFE0DBD3))),
+          enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0xFFE0DBD3))),
           focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: const BorderSide(color: accent, width: 1.5)),
-          labelStyle: TextStyle(color: Colors.white70, fontSize: settings.fontSize),
-          hintStyle: TextStyle(color: Colors.white38, fontSize: settings.fontSize),
+          labelStyle: TextStyle(color: const Color(0xFF6B6B80), fontSize: settings.fontSize),
+          hintStyle: TextStyle(color: const Color(0xFFAAAAAA), fontSize: settings.fontSize),
         ),
       ),
       home: const AuthWrapper(),
@@ -114,13 +122,13 @@ class NoorAlTariqApp extends StatelessWidget {
 
   // Build text sizes based on the base font size selected
   TextTheme _buildTextTheme(double base) => TextTheme(
-    displayLarge:   TextStyle(fontSize: base + 22, color: Colors.white),
-    headlineMedium: TextStyle(fontSize: base + 8,  color: Colors.white, fontWeight: FontWeight.w600),
-    titleLarge:     TextStyle(fontSize: base + 4,  color: Colors.white, fontWeight: FontWeight.w600),
-    bodyLarge:      TextStyle(fontSize: base + 2,  color: Colors.white),
-    bodyMedium:     TextStyle(fontSize: base,       color: Colors.white),
-    bodySmall:      TextStyle(fontSize: base - 2,  color: Colors.white70),
-    labelLarge:     TextStyle(fontSize: base + 2,  color: Colors.white, fontWeight: FontWeight.w600),
+    displayLarge:   TextStyle(fontSize: base + 22, color: const Color(0xFF1A1A2E)),
+    headlineMedium: TextStyle(fontSize: base + 8,  color: const Color(0xFF1A1A2E), fontWeight: FontWeight.w600),
+    titleLarge:     TextStyle(fontSize: base + 4,  color: const Color(0xFF1A1A2E), fontWeight: FontWeight.w600),
+    bodyLarge:      TextStyle(fontSize: base + 2,  color: const Color(0xFF1A1A2E)),
+    bodyMedium:     TextStyle(fontSize: base,       color: const Color(0xFF1A1A2E)),
+    bodySmall:      TextStyle(fontSize: base - 2,  color: const Color(0xFF6B6B80)),
+    labelLarge:     TextStyle(fontSize: base + 2,  color: const Color(0xFF1A1A2E), fontWeight: FontWeight.w600),
   );
 }
 

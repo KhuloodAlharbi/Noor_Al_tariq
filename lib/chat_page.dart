@@ -33,9 +33,9 @@ class _ChatPageState extends State<ChatPage> {
   bool _missionExpanded = true; // volunteer sees full card by default
 
   // ── colours ────────────────────────────────────────────────────────────────
-  static const _bg = Color(0xFF050608);
-  static const _card = Color(0xFF17191E);
-  static const _accent = Color(0xFFF6B733);
+  static const _bg = Color(0xFFF7F4EF);
+  static const _card = Color(0xFFFFFFFF);
+  static const _accent = Color(0xFFC9973A);
 
   // ── helpers ─────────────────────────────────────────────────────────────────
   String _formatTime(Timestamp? ts) {
@@ -212,7 +212,7 @@ class _ChatPageState extends State<ChatPage> {
                 Text(
                   appBarTitle,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Color(0xFF1A1A2E),
                     fontWeight: FontWeight.w700,
                     fontSize: 16,
                   ),
@@ -287,18 +287,18 @@ class _ChatPageState extends State<ChatPage> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.chat_bubble_outline,
                               size: 48,
-                              color: Colors.white.withOpacity(0.15),
+                              color: Color(0xFFCCCCDD),
                             ),
                             const SizedBox(height: 12),
                             Text(
                               isVolunteer
                                   ? 'Send a message to let the pilgrim know you\'re on the way!'
                                   : 'Your volunteer will be in touch shortly.',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.4),
+                              style: const TextStyle(
+                                color: Color(0xFF6B6B80),
                                 fontSize: 13,
                               ),
                               textAlign: TextAlign.center,
@@ -358,8 +358,8 @@ class _ChatPageState extends State<ChatPage> {
                   padding: const EdgeInsets.all(16),
                   child: Text(
                     'This request has been resolved.',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.4),
+                    style: const TextStyle(
+                      color: Color(0xFF6B6B80),
                       fontSize: 13,
                     ),
                     textAlign: TextAlign.center,
@@ -379,18 +379,18 @@ class _ChatPageState extends State<ChatPage> {
         backgroundColor: _card,
         title: const Text(
           'Mark as Resolved',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Color(0xFF1A1A2E)),
         ),
         content: const Text(
           'Has the pilgrim been helped? This will close the chat.',
-          style: TextStyle(color: Colors.white70),
+          style: TextStyle(color: Color(0xFF6B6B80)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text(
               'Cancel',
-              style: TextStyle(color: Colors.white54),
+              style: TextStyle(color: Color(0xFF9999AA)),
             ),
           ),
           ElevatedButton(
@@ -446,8 +446,8 @@ class _MissionInfoCard extends StatelessWidget {
     required this.onOpenMap,
   });
 
-  static const _card = Color(0xFF17191E);
-  static const _accent = Color(0xFFF6B733);
+  static const _card = Color(0xFFFFFFFF);
+  static const _accent = Color(0xFFC9973A);
 
   @override
   Widget build(BuildContext context) {
@@ -457,7 +457,8 @@ class _MissionInfoCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: _card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: priorityColor.withOpacity(0.45), width: 1.2),
+        boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 16, offset: Offset(0, 2))],
+        border: Border.all(color: priorityColor.withValues(alpha: 0.45), width: 1.2),
       ),
       child: Column(
         children: [
@@ -472,7 +473,7 @@ class _MissionInfoCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(7),
                     decoration: BoxDecoration(
-                      color: priorityColor.withOpacity(0.15),
+                      color: priorityColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(typeIcon, color: priorityColor, size: 20),
@@ -485,7 +486,7 @@ class _MissionInfoCard extends StatelessWidget {
                         Text(
                           typeLabel,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: Color(0xFF1A1A2E),
                             fontWeight: FontWeight.w700,
                             fontSize: 14,
                           ),
@@ -507,7 +508,7 @@ class _MissionInfoCard extends StatelessWidget {
                     expanded
                         ? Icons.keyboard_arrow_up_rounded
                         : Icons.keyboard_arrow_down_rounded,
-                    color: Colors.white38,
+                    color: const Color(0xFF9999AA),
                   ),
                 ],
               ),
@@ -516,7 +517,7 @@ class _MissionInfoCard extends StatelessWidget {
 
           // ── Expanded details ─────────────────────────────────────────────────
           if (expanded) ...[
-            Divider(color: Colors.white.withOpacity(0.08), height: 1),
+            const Divider(color: Color(0xFFE0DBD3), height: 1),
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
               child: Column(
@@ -529,7 +530,7 @@ class _MissionInfoCard extends StatelessWidget {
                     child: Text(
                       description.isEmpty ? '—' : description,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
+                        color: const Color(0xFF1A1A2E),
                         fontSize: 13,
                       ),
                       textDirection: language == 'ar'
@@ -546,7 +547,7 @@ class _MissionInfoCard extends StatelessWidget {
                     child: Text(
                       '$pilgrimName  •  ${language == 'ar' ? 'Arabic' : 'English'}',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
+                        color: const Color(0xFF1A1A2E),
                         fontSize: 13,
                       ),
                     ),
@@ -564,10 +565,10 @@ class _MissionInfoCard extends StatelessWidget {
                               vertical: 7,
                             ),
                             decoration: BoxDecoration(
-                              color: _accent.withOpacity(0.08),
+                              color: _accent.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: _accent.withOpacity(0.25),
+                                color: _accent.withValues(alpha: 0.25),
                               ),
                             ),
                             child: Row(
@@ -591,10 +592,10 @@ class _MissionInfoCard extends StatelessWidget {
                               ],
                             ),
                           )
-                        : Text(
+                        : const Text(
                             'Location not shared',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.4),
+                              color: Color(0xFF9999AA),
                               fontSize: 13,
                             ),
                           ),
@@ -618,10 +619,10 @@ class _MissionInfoCard extends StatelessWidget {
                           ),
                         );
                       },
-                      child: Text(
+                      child: const Text(
                         'Copy coordinates',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.35),
+                          color: Color(0xFF9999AA),
                           fontSize: 11,
                           decoration: TextDecoration.underline,
                         ),
@@ -649,7 +650,7 @@ class _Chip extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
     decoration: BoxDecoration(
-      color: color.withOpacity(0.15),
+      color: color.withValues(alpha: 0.15),
       borderRadius: BorderRadius.circular(6),
     ),
     child: Text(
@@ -673,12 +674,12 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) => Row(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Icon(icon, color: Colors.white38, size: 15),
+      Icon(icon, color: const Color(0xFF9999AA), size: 15),
       const SizedBox(width: 6),
       Text(
         '$label: ',
         style: const TextStyle(
-          color: Colors.white38,
+          color: Color(0xFF9999AA),
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
@@ -709,8 +710,8 @@ class _MessageBubble extends StatefulWidget {
 }
 
 class _MessageBubbleState extends State<_MessageBubble> {
-  static const _accent = Color(0xFFF6B733);
-  static const _card = Color(0xFF17191E);
+  static const _accent = Color(0xFFC9973A);
+  static const _card = Color(0xFFFFFFFF);
 
   String? _translated;
   bool _showOriginal = false;
@@ -747,6 +748,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
         ),
         decoration: BoxDecoration(
           color: widget.isMine ? _accent : _card,
+          boxShadow: widget.isMine ? null : const [BoxShadow(color: Color(0x0D000000), blurRadius: 8, offset: Offset(0, 2))],
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -778,7 +780,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
             Text(
               displayText,
               style: TextStyle(
-                color: widget.isMine ? Colors.black : Colors.white,
+                color: widget.isMine ? Colors.white : const Color(0xFF1A1A2E),
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -793,8 +795,8 @@ class _MessageBubbleState extends State<_MessageBubble> {
                   _showOriginal ? 'Hide original' : 'See original',
                   style: TextStyle(
                     color: widget.isMine
-                        ? Colors.black45
-                        : Colors.white38,
+                        ? Colors.white60
+                        : const Color(0xFF9999AA),
                     fontSize: 10,
                     decoration: TextDecoration.underline,
                   ),
@@ -807,8 +809,8 @@ class _MessageBubbleState extends State<_MessageBubble> {
                     widget.text,
                     style: TextStyle(
                       color: widget.isMine
-                          ? Colors.black45
-                          : Colors.white38,
+                          ? Colors.white60
+                          : const Color(0xFF9999AA),
                       fontSize: 11,
                       fontStyle: FontStyle.italic,
                     ),
@@ -847,9 +849,9 @@ class _ChatInput extends StatelessWidget {
     required this.onSend,
   });
 
-  static const _bg = Color(0xFF050608);
-  static const _card = Color(0xFF17191E);
-  static const _accent = Color(0xFFF6B733);
+  static const _bg = Color(0xFFF7F4EF);
+  static const _card = Color(0xFFFFFFFF);
+  static const _accent = Color(0xFFC9973A);
 
   @override
   Widget build(BuildContext context) {
@@ -857,7 +859,7 @@ class _ChatInput extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       decoration: const BoxDecoration(
         color: _bg,
-        border: Border(top: BorderSide(color: Colors.white10, width: 0.5)),
+        border: Border(top: BorderSide(color: Color(0xFFE8E4DE), width: 0.5)),
       ),
       child: SafeArea(
         top: false,
@@ -871,12 +873,12 @@ class _ChatInput extends StatelessWidget {
                 ),
                 child: TextField(
                   controller: controller,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Color(0xFF1A1A2E)),
                   minLines: 1,
                   maxLines: 4,
                   decoration: InputDecoration(
                     hintText: 'Type a message...',
-                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                    hintStyle: const TextStyle(color: Color(0xFFAAAAAA)),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 14,

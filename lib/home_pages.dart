@@ -198,10 +198,10 @@ class _HajjHomePageState extends State<HajjHomePage> {
   Widget build(BuildContext context) {
     final settings = context
         .watch<AppSettingsProvider>(); // ← for font size in nav bar
-    const background = Color(0xFF050608);
-    const cardColor = Color(0xFF17191E);
-    const bottomBarColor = Color(0xFF121317);
-    const accent = Color(0xFFF6B733);
+    const background = Color(0xFFF7F4EF);
+    const cardColor = Color(0xFFFFFFFF);
+    const bottomBarColor = Color(0xFFFFFFFF);
+    const accent = Color(0xFFC9973A);
 
     // Pages: 0=Home, 1=Chatbot, 2=SOS(not a page), 3=Map, 4=Settings
     final pages = <Widget>[
@@ -229,7 +229,8 @@ class _HajjHomePageState extends State<HajjHomePage> {
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: bottomBarColor,
-          border: Border(top: BorderSide(color: Colors.white10, width: 0.5)),
+          border: Border(top: BorderSide(color: Color(0xFFE8E4DE), width: 0.8)),
+          boxShadow: [BoxShadow(color: Color(0x12000000), blurRadius: 12, offset: Offset(0, -2))],
         ),
         child: SafeArea(
           child: SizedBox(
@@ -246,7 +247,6 @@ class _HajjHomePageState extends State<HajjHomePage> {
                   fontSize: settings.fontSize - 3,
                   onTap: () => _onItemTapped(0),
                 ),
-                // Chatbot
                 _NavBarItem(
                   icon: Icons.chat_bubble_rounded,
                   label: 'nav.chatbot'.tr(),
@@ -267,8 +267,8 @@ class _HajjHomePageState extends State<HajjHomePage> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: accent.withOpacity(0.4),
-                          blurRadius: 12,
+                          color: accent.withOpacity(0.35),
+                          blurRadius: 14,
                           offset: const Offset(0, 4),
                         ),
                       ],
@@ -276,12 +276,12 @@ class _HajjHomePageState extends State<HajjHomePage> {
                     child: const Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.sos_rounded, color: Colors.black, size: 20),
+                        Icon(Icons.sos_rounded, color: Colors.white, size: 20),
                         SizedBox(height: 1),
                         Text(
                           'Get Help',
                           style: TextStyle(
-                            color: Colors.black,
+                            color: Colors.white,
                             fontSize: 9,
                             fontWeight: FontWeight.w700,
                           ),
@@ -290,7 +290,6 @@ class _HajjHomePageState extends State<HajjHomePage> {
                     ),
                   ),
                 ),
-                // Map
                 _NavBarItem(
                   icon: Icons.map_rounded,
                   label: 'nav.map'.tr(),
@@ -299,7 +298,6 @@ class _HajjHomePageState extends State<HajjHomePage> {
                   fontSize: settings.fontSize - 3,
                   onTap: () => _onItemTapped(3),
                 ),
-                // Settings
                 _NavBarItem(
                   icon: Icons.settings_rounded,
                   label: 'nav.settings'.tr(),
@@ -347,12 +345,12 @@ class _NavBarItem extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: isSelected ? accent : Colors.white70, size: 24),
+            Icon(icon, color: isSelected ? accent : const Color(0xFF9999AA), size: 24),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? accent : Colors.white70,
+                color: isSelected ? accent : const Color(0xFF9999AA),
                 fontSize: fontSize,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
@@ -424,7 +422,7 @@ class _HomeTab extends StatelessWidget {
                 Text(
                   'home.daily_dua_title'.tr(),
                   style: TextStyle(
-                    color: const Color(0xFFF6B733),
+                    color: const Color(0xFFC9973A),
                     fontWeight: FontWeight.w600,
                     fontSize: fs,
                   ),
@@ -433,12 +431,12 @@ class _HomeTab extends StatelessWidget {
                 Text(
                   'home.daily_dua_arabic'.tr(),
                   textAlign: TextAlign.right,
-                  style: TextStyle(color: Colors.white, fontSize: fs + 1),
+                  style: TextStyle(color: const Color(0xFF1A1A2E), fontSize: fs + 1),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'home.daily_dua_transliteration'.tr(),
-                  style: TextStyle(color: Colors.white70, fontSize: fs - 1),
+                  style: TextStyle(color: const Color(0xFF6B6B80), fontSize: fs - 1),
                 ),
               ],
             ),
@@ -451,17 +449,14 @@ class _HomeTab extends StatelessWidget {
             cardColor: cardColor,
             child: Row(
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    width: 60,
-                    height: 60,
-                    color: Colors.blueGrey.shade700,
-                    child: const Icon(
-                      Icons.mosque_rounded,
-                      color: Colors.white,
-                    ),
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFC9973A).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(14),
                   ),
+                  child: const Icon(Icons.mosque_rounded, color: Color(0xFFC9973A), size: 28),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -470,16 +465,13 @@ class _HomeTab extends StatelessWidget {
                     children: [
                       Text(
                         'home.current_ritual'.tr(),
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: fs - 1,
-                        ),
+                        style: TextStyle(color: const Color(0xFF6B6B80), fontSize: fs - 1),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'home.ritual_name'.tr(),
                         style: TextStyle(
-                          color: Colors.white,
+                          color: const Color(0xFF1A1A2E),
                           fontWeight: FontWeight.w600,
                           fontSize: fs + 1,
                         ),
@@ -487,62 +479,9 @@ class _HomeTab extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         'home.ritual_location'.tr(),
-                        style: TextStyle(
-                          color: Colors.white54,
-                          fontSize: fs - 2,
-                        ),
+                        style: TextStyle(color: const Color(0xFF9999AA), fontSize: fs - 2),
                       ),
                     ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          // AI Guide / chatbot entry
-          _SectionCard(
-            cardColor: cardColor,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'home.ai_guide_title'.tr(),
-                        style: TextStyle(
-                          color: const Color(0xFFF6B733),
-                          fontWeight: FontWeight.w600,
-                          fontSize: fs,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'home.ai_guide_subtitle'.tr(),
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: fs - 1,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF6B733),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.mic_none_rounded,
-                      color: Colors.black,
-                    ),
-                    onPressed: () {
-                      // Later: programmatically switch to chatbot tab
-                    },
                   ),
                 ),
               ],
@@ -585,21 +524,21 @@ class _NextPrayerContent extends StatelessWidget {
           children: [
             Text(
               'home.next_prayer'.tr(),
-              style: TextStyle(color: Colors.white70, fontSize: fs - 1),
+              style: TextStyle(color: const Color(0xFF6B6B80), fontSize: fs - 1),
             ),
             const SizedBox(height: 4),
             Text(
               name,
               style: TextStyle(
-                color: Colors.white,
+                color: const Color(0xFF1A1A2E),
                 fontSize: fs + 6,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 2),
             Text(
               timeStr,
-              style: TextStyle(color: Colors.white54, fontSize: fs - 1),
+              style: TextStyle(color: const Color(0xFF9999AA), fontSize: fs - 1),
             ),
           ],
         ),
@@ -609,15 +548,15 @@ class _NextPrayerContent extends StatelessWidget {
             Text(
               'home.in_time'.tr(namedArgs: {'time': remaining}),
               style: TextStyle(
-                color: const Color(0xFFF6B733),
-                fontWeight: FontWeight.w600,
+                color: const Color(0xFFC9973A),
+                fontWeight: FontWeight.w700,
                 fontSize: fs,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               'home.prayer_time_label'.tr(),
-              style: TextStyle(color: Colors.white54, fontSize: fs - 2),
+              style: TextStyle(color: const Color(0xFF9999AA), fontSize: fs - 2),
             ),
           ],
         ),
@@ -656,10 +595,15 @@ class _TopHeaderCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.white24,
-                child: Icon(Icons.person, color: Colors.white),
+              // Logo placeholder — replace Container with Image.asset when ready
+              Container(
+                width: 44,
+                height: 44,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -669,35 +613,31 @@ class _TopHeaderCard extends StatelessWidget {
                     Text(
                       'app_name'.tr(),
                       style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1A1A2E),
+                        fontWeight: FontWeight.w700,
                         fontSize: fs + 2,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       'home.welcome'.tr(namedArgs: {'name': displayName}),
-                      style: TextStyle(color: Colors.white70, fontSize: fs - 1),
+                      style: TextStyle(color: const Color(0xFF6B6B80), fontSize: fs - 1),
                     ),
                   ],
                 ),
               ),
-              // Language indicator — shows current locale
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
-                  color: Colors.black.withOpacity(0.35),
-                  border: Border.all(color: Colors.white24),
+                  color: accent.withOpacity(0.1),
+                  border: Border.all(color: accent.withOpacity(0.25)),
                 ),
                 child: Text(
                   context.locale.languageCode.toUpperCase(),
                   style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
+                    color: accent,
+                    fontWeight: FontWeight.w700,
                     fontSize: fs - 2,
                   ),
                 ),
@@ -727,6 +667,9 @@ class _SectionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(18),
+        boxShadow: const [
+          BoxShadow(color: Color(0x0D000000), blurRadius: 16, offset: Offset(0, 2)),
+        ],
       ),
       child: child,
     );
@@ -851,8 +794,8 @@ class _ChatbotTabState extends State<_ChatbotTab> {
   @override
   Widget build(BuildContext context) {
     final fs = context.watch<AppSettingsProvider>().fontSize;
-    const background = Color(0xFF050608);
-    const accent = Color(0xFFF6B733);
+    const background = Color(0xFFF7F4EF);
+    const accent = Color(0xFFC9973A);
 
     return Scaffold(
       backgroundColor: background,
@@ -863,10 +806,11 @@ class _ChatbotTabState extends State<_ChatbotTab> {
             Container(
               padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
               decoration: const BoxDecoration(
-                color: Color(0xFF0D0F14),
+                color: Color(0xFFFFFFFF),
                 border: Border(
-                  bottom: BorderSide(color: Color(0xFF1E2128), width: 0.8),
+                  bottom: BorderSide(color: Color(0xFFE8E4DE), width: 0.8),
                 ),
+                boxShadow: [BoxShadow(color: Color(0x08000000), blurRadius: 8, offset: Offset(0, 2))],
               ),
               child: Row(
                 children: [
@@ -874,7 +818,7 @@ class _ChatbotTabState extends State<_ChatbotTab> {
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1A1000),
+                      color: accent.withOpacity(0.1),
                       shape: BoxShape.circle,
                       border: Border.all(color: accent, width: 1.5),
                     ),
@@ -892,8 +836,8 @@ class _ChatbotTabState extends State<_ChatbotTab> {
                         Text(
                           'chatbot.title'.tr(),
                           style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF1A1A2E),
+                            fontWeight: FontWeight.w700,
                             fontSize: fs + 2,
                           ),
                         ),
@@ -912,7 +856,7 @@ class _ChatbotTabState extends State<_ChatbotTab> {
                             Text(
                               'Online',
                               style: TextStyle(
-                                color: Colors.white38,
+                                color: const Color(0xFF9999AA),
                                 fontSize: fs - 4,
                               ),
                             ),
@@ -925,7 +869,7 @@ class _ChatbotTabState extends State<_ChatbotTab> {
                     tooltip: 'Clear chat',
                     icon: const Icon(
                       Icons.refresh_rounded,
-                      color: Colors.white38,
+                      color: Color(0xFFBBBBCC),
                       size: 22,
                     ),
                     onPressed: _clearChat,
@@ -980,7 +924,7 @@ class _ChatbotTabState extends State<_ChatbotTab> {
                                   child: Text(
                                     msg.text,
                                     style: TextStyle(
-                                      color: Color(0xFF0D0F14),
+                                      color: Colors.white,
                                       fontSize: fs,
                                       height: 1.5,
                                       fontWeight: FontWeight.w500,
@@ -991,7 +935,7 @@ class _ChatbotTabState extends State<_ChatbotTab> {
                                 Text(
                                   timeStr,
                                   style: TextStyle(
-                                    color: Colors.white24,
+                                    color: const Color(0xFFBBBBCC),
                                     fontSize: fs - 4,
                                   ),
                                 ),
@@ -1011,7 +955,7 @@ class _ChatbotTabState extends State<_ChatbotTab> {
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1A1000),
+                              color: accent.withOpacity(0.1),
                               shape: BoxShape.circle,
                               border: Border.all(color: accent, width: 1),
                             ),
@@ -1032,18 +976,19 @@ class _ChatbotTabState extends State<_ChatbotTab> {
                                     vertical: 10,
                                   ),
                                   decoration: const BoxDecoration(
-                                    color: Color(0xFF141720),
+                                    color: Color(0xFFFFFFFF),
                                     borderRadius: BorderRadius.only(
                                       topLeft: Radius.circular(18),
                                       topRight: Radius.circular(18),
                                       bottomRight: Radius.circular(18),
                                       bottomLeft: Radius.circular(4),
                                     ),
+                                    boxShadow: [BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 1))],
                                   ),
                                   child: Text(
                                     msg.text,
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: const Color(0xFF1A1A2E),
                                       fontSize: fs,
                                       height: 1.5,
                                     ),
@@ -1053,7 +998,7 @@ class _ChatbotTabState extends State<_ChatbotTab> {
                                 Text(
                                   timeStr,
                                   style: TextStyle(
-                                    color: Colors.white24,
+                                    color: const Color(0xFFBBBBCC),
                                     fontSize: fs - 4,
                                   ),
                                 ),
@@ -1073,9 +1018,9 @@ class _ChatbotTabState extends State<_ChatbotTab> {
             Container(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
               decoration: const BoxDecoration(
-                color: Color(0xFF0D0F14),
+                color: Color(0xFFFFFFFF),
                 border: Border(
-                  top: BorderSide(color: Color(0xFF1E2128), width: 0.8),
+                  top: BorderSide(color: Color(0xFFE8E4DE), width: 0.8),
                 ),
               ),
               child: Row(
@@ -1083,29 +1028,20 @@ class _ChatbotTabState extends State<_ChatbotTab> {
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFF17191E),
+                        color: const Color(0xFFF7F4EF),
                         borderRadius: BorderRadius.circular(28),
-                        border: Border.all(
-                          color: const Color(0xFF2A2D35),
-                          width: 1,
-                        ),
+                        border: Border.all(color: const Color(0xFFE0DBD3), width: 1),
                       ),
                       child: TextField(
                         controller: _controller,
-                        style: TextStyle(color: Colors.white, fontSize: fs),
+                        style: TextStyle(color: const Color(0xFF1A1A2E), fontSize: fs),
                         maxLines: null,
                         textInputAction: TextInputAction.send,
                         onSubmitted: (_) => _sendMessage(),
                         decoration: InputDecoration(
                           hintText: 'chatbot.ask_placeholder'.tr(),
-                          hintStyle: TextStyle(
-                            color: Colors.white38,
-                            fontSize: fs,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 12,
-                          ),
+                          hintStyle: TextStyle(color: const Color(0xFFAAAAAA), fontSize: fs),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                           border: InputBorder.none,
                         ),
                       ),
@@ -1123,14 +1059,12 @@ class _ChatbotTabState extends State<_ChatbotTab> {
                           width: 46,
                           height: 46,
                           decoration: BoxDecoration(
-                            color: active
-                                ? accent
-                                : const Color(0xFF1E2128),
+                            color: active ? accent : const Color(0xFFECE9E3),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.arrow_upward_rounded,
-                            color: active ? Colors.black : Colors.white24,
+                            color: active ? Colors.white : const Color(0xFFBBBBCC),
                             size: 22,
                           ),
                         ),
@@ -1196,7 +1130,7 @@ class _TypingIndicatorState extends State<_TypingIndicator>
 
   @override
   Widget build(BuildContext context) {
-    const accent = Color(0xFFF6B733);
+    const accent = Color(0xFFC9973A);
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Row(
@@ -1206,7 +1140,7 @@ class _TypingIndicatorState extends State<_TypingIndicator>
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1000),
+              color: accent.withOpacity(0.1),
               shape: BoxShape.circle,
               border: Border.all(color: accent, width: 1),
             ),
@@ -1216,7 +1150,7 @@ class _TypingIndicatorState extends State<_TypingIndicator>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
             decoration: const BoxDecoration(
-              color: Color(0xFF141720),
+              color: Color(0xFFFFFFFF),
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(18),
                 topRight: Radius.circular(18),
@@ -1322,9 +1256,9 @@ class _VolunteerHomePageState extends State<VolunteerHomePage> {
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<AppSettingsProvider>();
-    const background = Color(0xFF050608);
-    const bottomBarColor = Color(0xFF121317);
-    const accent = Color(0xFFF6B733);
+    const background = Color(0xFFF7F4EF);
+    const bottomBarColor = Color(0xFFFFFFFF);
+    const accent = Color(0xFFC9973A);
     final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     final pages = <Widget>[
@@ -1365,7 +1299,7 @@ class _VolunteerHomePageState extends State<VolunteerHomePage> {
             currentIndex: _selectedIndex,
             onTap: _onItemTapped,
             selectedItemColor: accent,
-            unselectedItemColor: Colors.white70,
+            unselectedItemColor: const Color(0xFF9999AA),
             showUnselectedLabels: true,
             selectedLabelStyle: TextStyle(fontSize: settings.fontSize - 2),
             unselectedLabelStyle: TextStyle(fontSize: settings.fontSize - 3),
@@ -1463,8 +1397,8 @@ class _VolunteerHomeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fs = context.watch<AppSettingsProvider>().fontSize;
-    const cardColor = Color(0xFF17191E);
-    const accent = Color(0xFFF6B733);
+    const cardColor = Color(0xFFFFFFFF);
+    const accent = Color(0xFFC9973A);
 
     final displayName = volunteerName ?? 'Volunteer';
     final currentUser = FirebaseAuth.instance.currentUser;
@@ -1507,6 +1441,7 @@ class _VolunteerHomeTab extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: cardColor,
                   borderRadius: BorderRadius.circular(20),
+                  boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 16, offset: Offset(0, 2))],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1530,8 +1465,8 @@ class _VolunteerHomeTab extends StatelessWidget {
                               Text(
                                 'app_name'.tr(),
                                 style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF1A1A2E),
+                                  fontWeight: FontWeight.w700,
                                   fontSize: fs + 2,
                                 ),
                               ),
@@ -1539,7 +1474,7 @@ class _VolunteerHomeTab extends StatelessWidget {
                               Text(
                                 'home.welcome'.tr(namedArgs: {'name': displayName}),
                                 style: TextStyle(
-                                  color: Colors.white70,
+                                  color: const Color(0xFF6B6B80),
                                   fontSize: fs,
                                 ),
                               ),
@@ -1624,10 +1559,7 @@ class _VolunteerHomeTab extends StatelessWidget {
                         children: [
                           Text(
                             'Current Status',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.45),
-                              fontSize: fs - 2,
-                            ),
+                            style: TextStyle(color: const Color(0xFF9999AA), fontSize: fs - 2),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -1661,12 +1593,12 @@ class _VolunteerHomeTab extends StatelessWidget {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
+                        color: const Color(0xFFC9973A).withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
                         Icons.health_and_safety_rounded,
-                        color: Colors.white70,
+                        color: Color(0xFFC9973A),
                         size: 24,
                       ),
                     ),
@@ -1677,16 +1609,13 @@ class _VolunteerHomeTab extends StatelessWidget {
                         children: [
                           Text(
                             'Requests Completed',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.45),
-                              fontSize: fs - 2,
-                            ),
+                            style: TextStyle(color: const Color(0xFF9999AA), fontSize: fs - 2),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             '$resolvedCount',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: const Color(0xFF1A1A2E),
                               fontSize: fs + 2,
                               fontWeight: FontWeight.w700,
                             ),
@@ -1705,9 +1634,9 @@ class _VolunteerHomeTab extends StatelessWidget {
                 Text(
                   'Active Request',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: const Color(0xFF1A1A2E),
                     fontSize: fs + 4,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -1746,12 +1675,12 @@ class _VolunteerHomeTab extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(_typeLabel(type),
-                                    style: TextStyle(color: Colors.white,
+                                    style: TextStyle(color: const Color(0xFF1A1A2E),
                                       fontSize: fs, fontWeight: FontWeight.w600)),
                                   const SizedBox(height: 2),
                                   Text('Pilgrim: $pilgrimName',
                                     style: TextStyle(
-                                      color: Colors.white.withOpacity(0.5),
+                                      color: const Color(0xFF9999AA),
                                       fontSize: fs - 2)),
                                 ],
                               ),
@@ -1774,8 +1703,7 @@ class _VolunteerHomeTab extends StatelessWidget {
                         if (desc.isNotEmpty) ...[
                           const SizedBox(height: 10),
                           Text(desc, maxLines: 2, overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.6), fontSize: fs - 1)),
+                            style: TextStyle(color: const Color(0xFF6B6B80), fontSize: fs - 1)),
                         ],
                         const SizedBox(height: 14),
                         SizedBox(
@@ -1808,9 +1736,9 @@ class _VolunteerHomeTab extends StatelessWidget {
                 Text(
                   'Incoming Requests',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: const Color(0xFF1A1A2E),
                     fontSize: fs + 4,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -1856,19 +1784,12 @@ class _VolunteerHomeTab extends StatelessWidget {
                             const SizedBox(height: 16),
                             Text(
                               'Waiting for requests',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.6),
-                                fontSize: fs,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: TextStyle(color: const Color(0xFF6B6B80), fontSize: fs, fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(height: 6),
                             Text(
                               'You\'ll be notified when a pilgrim needs your help',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.3),
-                                fontSize: fs - 2,
-                              ),
+                              style: TextStyle(color: const Color(0xFF9999AA), fontSize: fs - 2),
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -1918,22 +1839,19 @@ class _VolunteerHomeTab extends StatelessWidget {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(_typeLabel(type),
-                                          style: TextStyle(color: Colors.white,
+                                          style: TextStyle(color: const Color(0xFF1A1A2E),
                                             fontSize: fs - 1, fontWeight: FontWeight.w600)),
                                         Text(pilgrimName,
                                           style: TextStyle(
-                                            color: Colors.white.withOpacity(0.4),
+                                            color: const Color(0xFF9999AA),
                                             fontSize: fs - 3)),
                                       ],
                                     ),
                                   ),
                                   Text(_timeAgo(createdAt),
-                                    style: TextStyle(
-                                      color: Colors.white.withOpacity(0.3),
-                                      fontSize: fs - 3)),
+                                    style: TextStyle(color: const Color(0xFF9999AA), fontSize: fs - 3)),
                                   const SizedBox(width: 8),
-                                  Icon(Icons.chevron_right_rounded,
-                                      color: Colors.white.withOpacity(0.2), size: 18),
+                                  const Icon(Icons.chevron_right_rounded, color: Color(0xFFCCCCDD), size: 18),
                                 ],
                               ),
                             ),
@@ -2029,9 +1947,9 @@ class _VolunteerChatsTabState extends State<_VolunteerChatsTab> {
   @override
   Widget build(BuildContext context) {
     final fs = context.watch<AppSettingsProvider>().fontSize;
-    const background = Color(0xFF050608);
-    const cardColor = Color(0xFF17191E);
-    const accent = Color(0xFFF6B733);
+    const background = Color(0xFFF7F4EF);
+    const cardColor = Color(0xFFFFFFFF);
+    const accent = Color(0xFFC9973A);
 
     return Scaffold(
       backgroundColor: background,
@@ -2044,7 +1962,7 @@ class _VolunteerChatsTabState extends State<_VolunteerChatsTab> {
               child: Text(
                 'Active Chats',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: const Color(0xFF1A1A2E),
                   fontSize: fs + 6,
                   fontWeight: FontWeight.bold,
                 ),
@@ -2055,7 +1973,7 @@ class _VolunteerChatsTabState extends State<_VolunteerChatsTab> {
                   ? const Center(
                       child: Text(
                         'Please log in',
-                        style: TextStyle(color: Colors.white54),
+                        style: TextStyle(color: Color(0xFF6B6B80)),
                       ),
                     )
                   : StreamBuilder<QuerySnapshot>(
@@ -2113,26 +2031,20 @@ class _VolunteerChatsTabState extends State<_VolunteerChatsTab> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.chat_bubble_outline,
                                   size: 56,
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Color(0xFFCCCCDD),
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
                                   'No active chats',
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.5),
-                                    fontSize: fs,
-                                  ),
+                                  style: TextStyle(color: const Color(0xFF6B6B80), fontSize: fs),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
                                   'Accept a request to start chatting',
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.3),
-                                    fontSize: fs - 2,
-                                  ),
+                                  style: TextStyle(color: const Color(0xFF9999AA), fontSize: fs - 2),
                                 ),
                               ],
                             ),
@@ -2201,7 +2113,7 @@ class _VolunteerChatsTabState extends State<_VolunteerChatsTab> {
                                           Text(
                                             pilgrimName,
                                             style: TextStyle(
-                                              color: Colors.white,
+                                              color: const Color(0xFF1A1A2E),
                                               fontSize: fs,
                                               fontWeight: FontWeight.w600,
                                             ),
@@ -2221,12 +2133,7 @@ class _VolunteerChatsTabState extends State<_VolunteerChatsTab> {
                                               lastMsg,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                color: Colors.white.withOpacity(
-                                                  0.45,
-                                                ),
-                                                fontSize: fs - 3,
-                                              ),
+                                              style: TextStyle(color: const Color(0xFF9999AA), fontSize: fs - 3),
                                             ),
                                           ],
                                         ],
@@ -2238,7 +2145,7 @@ class _VolunteerChatsTabState extends State<_VolunteerChatsTab> {
                                       children: [
                                         const Icon(
                                           Icons.arrow_forward_ios_rounded,
-                                          color: Colors.white24,
+                                          color: Color(0xFFCCCCDD),
                                           size: 14,
                                         ),
                                         if (acceptedAt != null) ...[
@@ -2246,9 +2153,7 @@ class _VolunteerChatsTabState extends State<_VolunteerChatsTab> {
                                           Text(
                                             _timeAgo(acceptedAt),
                                             style: TextStyle(
-                                              color: Colors.white.withOpacity(
-                                                0.3,
-                                              ),
+                                              color: const Color(0xFF9999AA),
                                               fontSize: fs - 4,
                                             ),
                                           ),
@@ -2294,8 +2199,9 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF17191E),
+        color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(16),
+        boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 12, offset: Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2305,7 +2211,7 @@ class _StatCard extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              color: Colors.white,
+              color: const Color(0xFF1A1A2E),
               fontSize: fs + 14,
               fontWeight: FontWeight.bold,
             ),
@@ -2313,10 +2219,7 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             label,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
-              fontSize: fs - 2,
-            ),
+            style: TextStyle(color: const Color(0xFF6B6B80), fontSize: fs - 2),
           ),
         ],
       ),
@@ -2374,11 +2277,11 @@ class _AppSettingsContentState extends State<_AppSettingsContent> {
   Widget build(BuildContext context) {
     final settings = context.watch<AppSettingsProvider>();
     final fs = settings.fontSize;
-    const accent = Color(0xFFF6B733);
-    const cardColor = Color(0xFF17191E);
+    const accent = Color(0xFFC9973A);
+    const cardColor = Color(0xFFFFFFFF);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF050608),
+      backgroundColor: const Color(0xFFF7F4EF),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -2388,7 +2291,7 @@ class _AppSettingsContentState extends State<_AppSettingsContent> {
               Text(
                 'settings.title'.tr(),
                 style: TextStyle(
-                  color: Colors.white,
+                  color: const Color(0xFF1A1A2E),
                   fontSize: fs + 6,
                   fontWeight: FontWeight.bold,
                 ),
@@ -2514,15 +2417,15 @@ class _AppSettingsContentState extends State<_AppSettingsContent> {
       leading: Icon(icon, color: acc),
       title: Text(
         title,
-        style: TextStyle(color: Colors.white, fontSize: fs),
+        style: TextStyle(color: const Color(0xFF1A1A2E), fontSize: fs),
       ),
       subtitle: sub.isNotEmpty
           ? Text(
               sub,
-              style: TextStyle(color: Colors.white54, fontSize: fs - 2),
+              style: TextStyle(color: const Color(0xFF6B6B80), fontSize: fs - 2),
             )
           : null,
-      trailing: const Icon(Icons.chevron_right_rounded, color: Colors.white24),
+      trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFFCCCCDD)),
       onTap: tap,
     ),
   );
@@ -2552,12 +2455,12 @@ class _AppSettingsContentState extends State<_AppSettingsContent> {
             children: [
               Text(
                 title,
-                style: TextStyle(color: Colors.white, fontSize: fs),
+                style: TextStyle(color: const Color(0xFF1A1A2E), fontSize: fs),
               ),
               if (sub.isNotEmpty)
                 Text(
                   sub,
-                  style: TextStyle(color: Colors.white54, fontSize: fs - 2),
+                  style: TextStyle(color: const Color(0xFF6B6B80), fontSize: fs - 2),
                 ),
             ],
           ),
@@ -2588,7 +2491,7 @@ class _AppSettingsContentState extends State<_AppSettingsContent> {
               const SizedBox(width: 10),
               Text(
                 'profile.language_section'.tr(),
-                style: TextStyle(color: Colors.white, fontSize: fs),
+                style: TextStyle(color: const Color(0xFF1A1A2E), fontSize: fs),
               ),
             ],
           ),
@@ -2621,7 +2524,7 @@ class _AppSettingsContentState extends State<_AppSettingsContent> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: sel ? acc : Colors.white12,
+          color: sel ? acc : const Color(0xFFE8E4DE),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Center(
@@ -2657,7 +2560,7 @@ class _AppSettingsContentState extends State<_AppSettingsContent> {
             const SizedBox(width: 10),
             Text(
               'profile.font_section'.tr(),
-              style: TextStyle(color: Colors.white, fontSize: fs),
+              style: TextStyle(color: const Color(0xFF1A1A2E), fontSize: fs),
             ),
             const Spacer(),
             Text(

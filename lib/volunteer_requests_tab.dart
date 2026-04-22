@@ -249,9 +249,9 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
   @override
   Widget build(BuildContext context) {
     final fs = context.watch<AppSettingsProvider>().fontSize;
-    const background = Color(0xFF050608);
-    const cardColor = Color(0xFF17191E);
-    const accent = Color(0xFFF6B733);
+    const background = Color(0xFFF7F4EF);
+    const cardColor = Color(0xFFFFFFFF);
+    const accent = Color(0xFFC9973A);
 
     if (_isLoading) {
       return const Scaffold(
@@ -274,7 +274,7 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
               child: Text(
                 'Incoming Requests',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: const Color(0xFF1A1A2E),
                   fontSize: fs + 6,
                   fontWeight: FontWeight.bold,
                 ),
@@ -285,7 +285,7 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
               child: Text(
                 'Showing requests matching your expertise',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.5),
+                  color: const Color(0xFF6B6B80),
                   fontSize: fs - 2,
                 ),
               ),
@@ -305,9 +305,9 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: accent.withOpacity(0.15),
+                          color: accent.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: accent.withOpacity(0.3)),
+                          border: Border.all(color: accent.withValues(alpha: 0.3)),
                         ),
                         child: Text(
                           _typeLabel(e),
@@ -324,7 +324,7 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
             ),
 
             const SizedBox(height: 12),
-            Container(height: 0.5, color: Colors.white12),
+            const Divider(color: Color(0xFFE0DBD3), height: 1),
             const SizedBox(height: 8),
 
             // ── Stream of pending requests ─────────────────────────────────
@@ -333,7 +333,7 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                   ? const Center(
                       child: Text(
                         'Please log in',
-                        style: TextStyle(color: Colors.white54),
+                        style: TextStyle(color: Color(0xFF6B6B80)),
                       ),
                     )
                   : StreamBuilder<QuerySnapshot>(
@@ -372,7 +372,7 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                   Text(
                                     'Index required. Check console for the link to create it.',
                                     style: TextStyle(
-                                      color: Colors.white.withOpacity(0.6),
+                                      color: const Color(0xFF6B6B80),
                                       fontSize: 13,
                                     ),
                                     textAlign: TextAlign.center,
@@ -404,13 +404,13 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                 Icon(
                                   Icons.inbox_rounded,
                                   size: 56,
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Color(0xFFCCCCDD),
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
                                   'No requests right now',
                                   style: TextStyle(
-                                    color: Colors.white.withOpacity(0.5),
+                                    color: Color(0xFF6B6B80),
                                     fontSize: fs,
                                   ),
                                 ),
@@ -418,7 +418,7 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                 Text(
                                   'New help requests will appear here',
                                   style: TextStyle(
-                                    color: Colors.white.withOpacity(0.3),
+                                    color: Color(0xFF9999AA),
                                     fontSize: fs - 2,
                                   ),
                                 ),
@@ -456,11 +456,16 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                               decoration: BoxDecoration(
                                 color: cardColor,
                                 borderRadius: BorderRadius.circular(16),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color(0x0D000000),
+                                    blurRadius: 16,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
                                 border: priority >= 4
                                     ? Border.all(
-                                        color: _priorityColor(
-                                          priority,
-                                        ).withOpacity(0.4),
+                                        color: _priorityColor(priority).withValues(alpha: 0.4),
                                         width: 1,
                                       )
                                     : null,
@@ -486,7 +491,7 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                               decoration: BoxDecoration(
                                                 color: _priorityColor(
                                                   priority,
-                                                ).withOpacity(0.15),
+                                                ).withValues(alpha: 0.15),
                                                 borderRadius:
                                                     BorderRadius.circular(10),
                                               ),
@@ -505,7 +510,7 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                                   Text(
                                                     _typeLabel(type),
                                                     style: TextStyle(
-                                                      color: Colors.white,
+                                                      color: const Color(0xFF1A1A2E),
                                                       fontSize: fs,
                                                       fontWeight:
                                                           FontWeight.w600,
@@ -603,9 +608,7 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                             Text(
                                               _timeAgo(createdAt),
                                               style: TextStyle(
-                                                color: Colors.white.withOpacity(
-                                                  0.4,
-                                                ),
+                                                color: const Color(0xFF9999AA),
                                                 fontSize: fs - 3,
                                               ),
                                             ),
@@ -619,9 +622,7 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                           width: double.infinity,
                                           padding: const EdgeInsets.all(10),
                                           decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(
-                                              0.04,
-                                            ),
+                                            color: const Color(0xFFF7F4EF),
                                             borderRadius: BorderRadius.circular(
                                               10,
                                             ),
@@ -629,9 +630,7 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                           child: Text(
                                             desc,
                                             style: TextStyle(
-                                              color: Colors.white.withOpacity(
-                                                0.8,
-                                              ),
+                                              color: const Color(0xFF1A1A2E),
                                               fontSize: fs - 1,
                                             ),
                                             maxLines: 3,
@@ -649,27 +648,21 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                           children: [
                                             Icon(
                                               Icons.person_outline,
-                                              color: Colors.white.withOpacity(
-                                                0.4,
-                                              ),
+                                              color: const Color(0xFF9999AA),
                                               size: 16,
                                             ),
                                             const SizedBox(width: 6),
                                             Text(
                                               pilgrimName,
                                               style: TextStyle(
-                                                color: Colors.white.withOpacity(
-                                                  0.5,
-                                                ),
+                                                color: const Color(0xFF6B6B80),
                                                 fontSize: fs - 2,
                                               ),
                                             ),
                                             const Spacer(),
                                             Icon(
                                               Icons.language,
-                                              color: Colors.white.withOpacity(
-                                                0.4,
-                                              ),
+                                              color: const Color(0xFF9999AA),
                                               size: 14,
                                             ),
                                             const SizedBox(width: 4),
@@ -678,9 +671,7 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                                   ? 'Arabic'
                                                   : 'English',
                                               style: TextStyle(
-                                                color: Colors.white.withOpacity(
-                                                  0.5,
-                                                ),
+                                                color: const Color(0xFF6B6B80),
                                                 fontSize: fs - 2,
                                               ),
                                             ),
@@ -691,10 +682,7 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                   ),
 
                                   const SizedBox(height: 12),
-                                  Container(
-                                    height: 0.5,
-                                    color: Colors.white.withOpacity(0.08),
-                                  ),
+                                  const Divider(color: Color(0xFFE0DBD3), height: 1),
 
                                   // ── Accept / Decline buttons ─────────────
                                   Row(
@@ -716,17 +704,14 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                               children: [
                                                 Icon(
                                                   Icons.close_rounded,
-                                                  color: Colors.red.withOpacity(
-                                                    0.8,
-                                                  ),
+                                                  color: Colors.red.withValues(alpha: 0.8),
                                                   size: 18,
                                                 ),
                                                 const SizedBox(width: 6),
                                                 Text(
                                                   'Decline',
                                                   style: TextStyle(
-                                                    color: Colors.red
-                                                        .withOpacity(0.8),
+                                                    color: Colors.red.withValues(alpha: 0.8),
                                                     fontSize: fs - 1,
                                                     fontWeight: FontWeight.w600,
                                                   ),
@@ -736,11 +721,7 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                           ),
                                         ),
                                       ),
-                                      Container(
-                                        width: 0.5,
-                                        height: 44,
-                                        color: Colors.white.withOpacity(0.08),
-                                      ),
+                                      const VerticalDivider(color: Color(0xFFE0DBD3), width: 1),
                                       // Accept → opens chat
                                       Expanded(
                                         child: InkWell(
@@ -758,16 +739,14 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                               children: [
                                                 const Icon(
                                                   Icons.check_rounded,
-                                                  color: Color(0xFFF6B733),
+                                                  color: Color(0xFFC9973A),
                                                   size: 18,
                                                 ),
                                                 const SizedBox(width: 6),
                                                 Text(
                                                   'Accept & Chat',
                                                   style: TextStyle(
-                                                    color: const Color(
-                                                      0xFFF6B733,
-                                                    ),
+                                                    color: const Color(0xFFC9973A),
                                                     fontSize: fs - 1,
                                                     fontWeight: FontWeight.w600,
                                                   ),
@@ -794,21 +773,21 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
               child: Row(
                 children: [
                   Expanded(
-                    child: Container(height: 0.5, color: Colors.white12),
+                    child: Divider(color: Color(0xFFE0DBD3), height: 1),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: Text(
                       'My Active Chats',
                       style: TextStyle(
-                        color: Colors.white38,
+                        color: const Color(0xFF9999AA),
                         fontSize: fs - 3,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                   Expanded(
-                    child: Container(height: 0.5, color: Colors.white12),
+                    child: Divider(color: Color(0xFFE0DBD3), height: 1),
                   ),
                 ],
               ),
@@ -841,7 +820,7 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                             child: Text(
                               'No active chats',
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.25),
+                                color: const Color(0xFF9999AA),
                                 fontSize: 12,
                               ),
                             ),
@@ -873,12 +852,17 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                   vertical: 10,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF17191E),
+                                  color: const Color(0xFFFFFFFF),
                                   borderRadius: BorderRadius.circular(14),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Color(0x0D000000),
+                                      blurRadius: 8,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
                                   border: Border.all(
-                                    color: const Color(
-                                      0xFFF6B733,
-                                    ).withOpacity(0.4),
+                                    color: const Color(0xFFC9973A).withValues(alpha: 0.4),
                                   ),
                                 ),
                                 child: Row(
@@ -886,7 +870,7 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                   children: [
                                     const Icon(
                                       Icons.chat_bubble_outline,
-                                      color: Color(0xFFF6B733),
+                                      color: Color(0xFFC9973A),
                                       size: 16,
                                     ),
                                     const SizedBox(width: 8),
@@ -899,17 +883,15 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                         Text(
                                           pName,
                                           style: const TextStyle(
-                                            color: Colors.white,
+                                            color: Color(0xFF1A1A2E),
                                             fontSize: 13,
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                         Text(
                                           _typeLabel(type),
-                                          style: TextStyle(
-                                            color: Colors.white.withOpacity(
-                                              0.45,
-                                            ),
+                                          style: const TextStyle(
+                                            color: Color(0xFF9999AA),
                                             fontSize: 10,
                                           ),
                                         ),

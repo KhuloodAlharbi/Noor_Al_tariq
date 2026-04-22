@@ -130,9 +130,9 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final settings   = context.watch<AppSettingsProvider>();
-    const bg         = Color(0xFF050608);
-    const accent     = Color(0xFFF6B733);
-    const cardColor  = Color(0xFF17191E);
+    const bg         = Color(0xFFF7F4EF);
+    const accent     = Color(0xFFC9973A);
+    const cardColor  = Color(0xFFFFFFFF);
 
     return Scaffold(
       backgroundColor: bg,
@@ -231,7 +231,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       child: ElevatedButton(
                         onPressed: _isSaving ? null : _save,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: accent, foregroundColor: Colors.black,
+                          backgroundColor: accent, foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
@@ -261,22 +261,25 @@ class _ProfilePageState extends State<ProfilePage> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(18)),
+      decoration: BoxDecoration(
+        color: cardColor, borderRadius: BorderRadius.circular(18),
+        boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 16, offset: Offset(0, 2))],
+      ),
       child: Row(children: [
         CircleAvatar(
           radius: 32,
-          backgroundColor: accent.withOpacity(0.2),
+          backgroundColor: accent.withOpacity(0.15),
           child: Text(initials, style: TextStyle(
               color: accent, fontSize: settings.fontSize + 6, fontWeight: FontWeight.bold)),
         ),
         const SizedBox(width: 16),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(name.isNotEmpty ? name : 'profile.full_name'.tr(),
-              style: TextStyle(color: Colors.white, fontSize: settings.fontSize + 4,
+              style: TextStyle(color: const Color(0xFF1A1A2E), fontSize: settings.fontSize + 4,
                   fontWeight: FontWeight.w600)),
           const SizedBox(height: 4),
           Text(FirebaseAuth.instance.currentUser?.email ?? '',
-              style: TextStyle(color: Colors.white54, fontSize: settings.fontSize - 2)),
+              style: TextStyle(color: const Color(0xFF6B6B80), fontSize: settings.fontSize - 2)),
         ])),
       ]),
     );
@@ -288,7 +291,10 @@ class _ProfilePageState extends State<ProfilePage> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(18)),
+      decoration: BoxDecoration(
+        color: cardColor, borderRadius: BorderRadius.circular(18),
+        boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 16, offset: Offset(0, 2))],
+      ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Icon(icon, color: accent, size: 20),
@@ -310,16 +316,19 @@ class _ProfilePageState extends State<ProfilePage> {
       }) {
     return TextFormField(
       controller: ctrl, maxLines: maxLines, keyboardType: keyboardType,
-      style: TextStyle(color: Colors.white, fontSize: settings.fontSize),
+      style: TextStyle(color: const Color(0xFF1A1A2E), fontSize: settings.fontSize),
       decoration: InputDecoration(
         labelText: label, hintText: hint,
-        labelStyle: TextStyle(color: Colors.white70, fontSize: settings.fontSize),
-        hintStyle: TextStyle(color: Colors.white38, fontSize: settings.fontSize),
-        prefixIcon: Icon(icon, color: Colors.white54, size: 20),
-        filled: true, fillColor: const Color(0xFF23252B),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        labelStyle: TextStyle(color: const Color(0xFF6B6B80), fontSize: settings.fontSize),
+        hintStyle: TextStyle(color: const Color(0xFFAAAAAA), fontSize: settings.fontSize),
+        prefixIcon: Icon(icon, color: const Color(0xFF9999AA), size: 20),
+        filled: true, fillColor: const Color(0xFFF7F4EF),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFE0DBD3))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFE0DBD3))),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFF6B733), width: 1.5)),
+            borderSide: const BorderSide(color: Color(0xFFC9973A), width: 1.5)),
         errorStyle: TextStyle(fontSize: settings.fontSize - 2, color: Colors.redAccent),
       ),
       validator: validator,
@@ -331,20 +340,23 @@ class _ProfilePageState extends State<ProfilePage> {
       AppSettingsProvider settings) {
     return DropdownButtonFormField<String>(
       value: value,
-      dropdownColor: const Color(0xFF23252B),
-      style: TextStyle(color: Colors.white, fontSize: settings.fontSize),
+      dropdownColor: const Color(0xFFFFFFFF),
+      style: TextStyle(color: const Color(0xFF1A1A2E), fontSize: settings.fontSize),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: Colors.white70, fontSize: settings.fontSize),
-        prefixIcon: Icon(icon, color: Colors.white54, size: 20),
-        filled: true, fillColor: const Color(0xFF23252B),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        labelStyle: TextStyle(color: const Color(0xFF6B6B80), fontSize: settings.fontSize),
+        prefixIcon: Icon(icon, color: const Color(0xFF9999AA), size: 20),
+        filled: true, fillColor: const Color(0xFFF7F4EF),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFE0DBD3))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFE0DBD3))),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFF6B733), width: 1.5)),
+            borderSide: const BorderSide(color: Color(0xFFC9973A), width: 1.5)),
       ),
       items: items.map((item) => DropdownMenuItem<String>(
         value: item.$2,
-        child: Text(item.$1, style: TextStyle(color: Colors.white, fontSize: settings.fontSize)),
+        child: Text(item.$1, style: TextStyle(color: const Color(0xFF1A1A2E), fontSize: settings.fontSize)),
       )).toList(),
       onChanged: onChanged,
     );

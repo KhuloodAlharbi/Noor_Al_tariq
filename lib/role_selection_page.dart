@@ -34,11 +34,18 @@ class RoleSelectionPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Center(
+              child: Image.asset(
+                'assets/images/logo.png',
+                height: 72,
+              ),
+            ),
+            const SizedBox(height: 16),
             Text(
               'role_selection.greeting'.tr(),
               style: const TextStyle(
                 fontSize: 20,
-                color: Colors.white70,
+                color: Color(0xFF6B6B80),
                 fontWeight: FontWeight.w400,
               ),
             ),
@@ -48,14 +55,14 @@ class RoleSelectionPage extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
-                color: Colors.white,
+                color: Color(0xFF1A1A2E),
               ),
             ),
             const SizedBox(height: 24),
             Text(
               'role_selection.subtitle'.tr(),
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
+              style: const TextStyle(
+                color: Color(0xFF6B6B80),
                 fontSize: 14,
               ),
             ),
@@ -99,8 +106,8 @@ class RoleSelectionPage extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Text(
                   'role_selection.footer'.tr(),
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
+                  style: const TextStyle(
+                    color: Color(0xFF9999AA),
                     fontSize: 12,
                   ),
                   textAlign: TextAlign.center,
@@ -145,12 +152,12 @@ class _RoleCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: cardColor,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white10),
-          boxShadow: [
+          border: Border.all(color: const Color(0xFFE8E4DE)),
+          boxShadow: const [
             BoxShadow(
-              color: Colors.black.withOpacity(0.6),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
+              color: Color(0x0D000000),
+              blurRadius: 16,
+              offset: Offset(0, 2),
             ),
           ],
         ),
@@ -182,7 +189,7 @@ class _RoleCard extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                            color: Color(0xFF1A1A2E),
                           ),
                         ),
                         // NEW: Badge for volunteer
@@ -218,7 +225,7 @@ class _RoleCard extends StatelessWidget {
                       subtitle,
                       style: const TextStyle(
                         fontSize: 13,
-                        color: Colors.white70,
+                        color: Color(0xFF6B6B80),
                       ),
                     ),
                   ],
@@ -229,7 +236,7 @@ class _RoleCard extends StatelessWidget {
               const Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 16,
-                color: Colors.white54,
+                color: Color(0xFFCCCCDD),
               ),
             ],
           ),
