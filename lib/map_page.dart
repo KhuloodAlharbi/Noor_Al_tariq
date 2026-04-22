@@ -22,8 +22,8 @@ class _MapPageState extends State<MapPage> {
   MapType currentMapType = MapType.normal;
 
   static const LatLng haram = LatLng(21.4225, 39.8262);
-  static const Color backgroundColor = Color(0xFF0B0F1A);
-  static const Color accentColor = Color(0xFFF2B233);
+  static const Color backgroundColor = Color(0xFFF7F4EF);
+  static const Color accentColor = Color(0xFFC9973A);
 
   // ---------- LIVE CROWD STATE ----------
   List<CrowdZone> crowdZones = CrowdData.sampleZones;
@@ -366,7 +366,7 @@ class _MapPageState extends State<MapPage> {
       builder: (context) => Container(
         padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
-          color: Color(0xFF1A1F2E),
+          color: Color(0xFFFFFFFF),
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -379,7 +379,7 @@ class _MapPageState extends State<MapPage> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: const Color(0xFFE0DBD3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -402,7 +402,7 @@ class _MapPageState extends State<MapPage> {
                   child: Text(
                     zone.name,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: Color(0xFF1A1A2E),
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -462,7 +462,7 @@ class _MapPageState extends State<MapPage> {
                     Text(
                       zone.bestTime,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: Color(0xFF1A1A2E),
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -472,7 +472,7 @@ class _MapPageState extends State<MapPage> {
                       Text(
                         zone.bestTimeNote,
                         style: const TextStyle(
-                          color: Colors.white60,
+                          color: Color(0xFF6B6B80),
                           fontSize: 12,
                         ),
                       ),
@@ -490,8 +490,8 @@ class _MapPageState extends State<MapPage> {
                 Expanded(
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Colors.white24),
+                      foregroundColor: const Color(0xFF1A1A2E),
+                      side: const BorderSide(color: Color(0xFFE0DBD3)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -582,7 +582,7 @@ class _MapPageState extends State<MapPage> {
         polylineId: const PolylineId("route"),
         points: activeRoute!.points,
         color: routePassesCrowdedZone
-            ? const Color(0xFFF2B233)
+            ? const Color(0xFFC9973A)
             : const Color(0xFF1E88E5),
         width: 6,
       ),
@@ -615,7 +615,7 @@ class _MapPageState extends State<MapPage> {
           const Text(
             "Map",
             style: TextStyle(
-              color: Colors.white,
+              color: Color(0xFF1A1A2E),
               fontSize: 22,
               fontWeight: FontWeight.bold,
             ),
@@ -776,7 +776,7 @@ class _MapPageState extends State<MapPage> {
                       SizedBox(height: 12),
                       Text(
                         "Finding the best route...",
-                        style: TextStyle(color: Colors.white, fontSize: 14),
+                        style: TextStyle(color: Color(0xFF1A1A2E), fontSize: 14),
                       ),
                     ],
                   ),
@@ -963,10 +963,10 @@ class _MapPageState extends State<MapPage> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: isActive ? accentColor : Colors.white12,
+                  color: isActive ? accentColor : const Color(0xFFFFFFFF),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isActive ? accentColor : Colors.white24,
+                    color: isActive ? accentColor : const Color(0xFFE0DBD3),
                   ),
                 ),
                 child: Row(
@@ -974,7 +974,7 @@ class _MapPageState extends State<MapPage> {
                     Icon(
                       cat["icon"] as IconData,
                       size: 16,
-                      color: isActive ? Colors.black : Colors.white70,
+                      color: isActive ? Colors.white : const Color(0xFF6B6B80),
                     ),
                     const SizedBox(width: 6),
                     Text(
@@ -982,7 +982,7 @@ class _MapPageState extends State<MapPage> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: isActive ? Colors.black : Colors.white70,
+                        color: isActive ? Colors.white : const Color(0xFF6B6B80),
                       ),
                     ),
                   ],
@@ -1026,15 +1026,15 @@ class _MapPageState extends State<MapPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? accentColor : Colors.white12,
+          color: isSelected ? accentColor : const Color(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isSelected ? accentColor : Colors.white24),
+          border: Border.all(color: isSelected ? accentColor : const Color(0xFFE0DBD3)),
         ),
         child: Row(
           children: [
             Icon(
               _iconFor(place),
-              color: isSelected ? Colors.black : Colors.white,
+              color: isSelected ? Colors.white : const Color(0xFF1A1A2E),
               size: 20,
             ),
             const SizedBox(width: 8),
@@ -1045,7 +1045,7 @@ class _MapPageState extends State<MapPage> {
                 Text(
                   place.name,
                   style: TextStyle(
-                    color: isSelected ? Colors.black : Colors.white,
+                    color: isSelected ? Colors.white : const Color(0xFF1A1A2E),
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
@@ -1053,7 +1053,7 @@ class _MapPageState extends State<MapPage> {
                 Text(
                   isSelected ? "Navigating..." : "Tap to navigate",
                   style: TextStyle(
-                    color: isSelected ? Colors.black87 : Colors.white60,
+                    color: isSelected ? Colors.white70 : const Color(0xFF9999AA),
                     fontSize: 10,
                   ),
                 ),
