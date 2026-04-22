@@ -9,7 +9,6 @@ import 'map/crowd_zone.dart';
 import 'map/crowd_data.dart';
 import 'map/crowd_api_service.dart';
 import 'map/directions_service.dart';
-import 'sos_request_page.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -352,14 +351,6 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
-  // ---------- SOS: GO TO SOS PAGE ----------
-  void _openSOSPage() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const SOSRequestPage()),
-    );
-  }
-
   void _showSnack(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), duration: const Duration(seconds: 3)),
@@ -607,9 +598,9 @@ class _MapPageState extends State<MapPage> {
         child: Column(
           children: [
             _buildHeader(),
-            Expanded(child: _buildMap()),
             _buildCategoryTabs(),
             _buildPlaceList(),
+            Expanded(child: _buildMap()),
           ],
         ),
       ),
@@ -631,20 +622,6 @@ class _MapPageState extends State<MapPage> {
           ),
           const SizedBox(width: 10),
           _buildLiveIndicator(),
-          const Spacer(),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-            ),
-            onPressed: _openSOSPage,
-            icon: const Icon(Icons.share_location, size: 16),
-            label: const Text("SOS", style: TextStyle(fontSize: 13)),
-          ),
         ],
       ),
     );
@@ -1022,51 +999,23 @@ class _MapPageState extends State<MapPage> {
   Widget _buildPlaceList() {
     // Filter places by selected category
     final places = _selectedCategory == "all"
-        ? PlacesData.all.where((p) => p.id != "kaaba").toList()
-        : PlacesData.all
-              .where((p) => p.category == _selectedCategory && p.id != "kaaba")
-              .toList();
+        ? PlacesData.all
+        : PlacesData.all.where((p) => p.category == _selectedCategory).toList();
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-      child: Column(
-        children: [
-          // Main button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: accentColor,
-                foregroundColor: Colors.black,
-                minimumSize: const Size(double.infinity, 48),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              onPressed: () => _navigateTo(PlacesData.getById("kaaba")!),
-              icon: const Icon(Icons.navigation, size: 18),
-              label: const Text(
-                "Navigate to Haram",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          // Scrollable place cards
-          SizedBox(
-            height: 65,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: places.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final place = places[index];
-                final isSelected = selectedPlace?.id == place.id;
-                return _placeCard(place, isSelected);
-              },
-            ),
-          ),
-        ],
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: SizedBox(
+        height: 65,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: places.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (context, index) {
+            final place = places[index];
+            final isSelected = selectedPlace?.id == place.id;
+            return _placeCard(place, isSelected);
+          },
+        ),
       ),
     );
   }
@@ -1118,6 +1067,8 @@ class _MapPageState extends State<MapPage> {
 
   IconData _iconFor(Place place) {
     switch (place.id) {
+      case "kaaba":
+        return Icons.navigation;
       case "saee":
         return Icons.directions_walk;
       case "mina":
