@@ -388,6 +388,7 @@ class _HomeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fs = context.watch<AppSettingsProvider>().fontSize;
+    final isArabic = context.locale.languageCode == 'ar';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -428,20 +429,29 @@ class _HomeTab extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
+
                 Text(
                   'home.daily_dua_arabic'.tr(),
                   textAlign: TextAlign.right,
-                  style: TextStyle(color: const Color(0xFF1A1A2E), fontSize: fs + 1),
+                  style: TextStyle(
+                    color: const Color(0xFF1A1A2E),
+                    fontSize: fs + 1,
+                  ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'home.daily_dua_transliteration'.tr(),
-                  style: TextStyle(color: const Color(0xFF6B6B80), fontSize: fs - 1),
-                ),
+
+                if (!isArabic) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'home.daily_dua_transliteration'.tr(),
+                    style: TextStyle(
+                      color: const Color(0xFF6B6B80),
+                      fontSize: fs - 1,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
-
           const SizedBox(height: 12),
 
           // Current ritual
@@ -1353,45 +1363,75 @@ class _VolunteerHomeTab extends StatelessWidget {
   });
 
   String _typeLabel(String? t) {
-    const m = {
-      'medical': 'Medical',
-      'navigation': 'Navigation',
-      'translation': 'Translation',
-      'general_guidance': 'General Help',
-      'emergency_response': 'Emergency',
-      'crowd_management': 'Crowd Safety',
+    if (t == null || t.isEmpty) return 'sos.type_general'.tr();
+
+    final key = switch (t) {
+      'medical' => 'volunteer_application.expertise.medical',
+      'navigation' => 'volunteer_application.expertise.navigation',
+      'translation' => 'volunteer_application.expertise.translation',
+      'general_guidance' => 'volunteer_application.expertise.general_guidance',
+      'emergency_response' => 'volunteer_application.expertise.emergency_response',
+      'crowd_management' => 'volunteer_application.expertise.crowd_management',
+      _ => 'sos.type_general',
     };
-    return m[t] ?? t ?? 'Help';
+
+    return key.tr();
   }
 
   IconData _typeIcon(String? t) {
     switch (t) {
-      case 'medical': return Icons.local_hospital_rounded;
-      case 'navigation': return Icons.navigation_rounded;
-      case 'translation': return Icons.translate_rounded;
-      case 'emergency_response': return Icons.emergency_rounded;
-      case 'crowd_management': return Icons.groups_rounded;
-      default: return Icons.help_outline_rounded;
+      case 'medical':
+        return Icons.local_hospital_rounded;
+      case 'navigation':
+        return Icons.navigation_rounded;
+      case 'translation':
+        return Icons.translate_rounded;
+      case 'emergency_response':
+        return Icons.emergency_rounded;
+      case 'crowd_management':
+        return Icons.groups_rounded;
+      default:
+        return Icons.help_outline_rounded;
     }
   }
 
   Color _priorityColor(int p) {
     switch (p) {
-      case 5: return Colors.red;
-      case 4: return Colors.deepOrange;
-      case 3: return Colors.orange;
-      case 2: return Colors.lightGreen;
-      default: return Colors.green;
+      case 5:
+        return Colors.red;
+      case 4:
+        return Colors.deepOrange;
+      case 3:
+        return Colors.orange;
+      case 2:
+        return Colors.lightGreen;
+      default:
+        return Colors.green;
     }
   }
 
   String _timeAgo(Timestamp? ts) {
     if (ts == null) return '';
+
     final diff = DateTime.now().difference(ts.toDate());
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
+
+    if (diff.inMinutes < 1) return 'time.just_now'.tr();
+
+    if (diff.inMinutes < 60) {
+      return 'time.minutes_ago'.tr(
+        namedArgs: {'count': diff.inMinutes.toString()},
+      );
+    }
+
+    if (diff.inHours < 24) {
+      return 'time.hours_ago'.tr(
+        namedArgs: {'count': diff.inHours.toString()},
+      );
+    }
+
+    return 'time.days_ago'.tr(
+      namedArgs: {'count': diff.inDays.toString()},
+    );
   }
 
   @override
@@ -1400,7 +1440,7 @@ class _VolunteerHomeTab extends StatelessWidget {
     const cardColor = Color(0xFFFFFFFF);
     const accent = Color(0xFFC9973A);
 
-    final displayName = volunteerName ?? 'Volunteer';
+    final displayName = volunteerName ?? 'auth.role_volunteer'.tr();
     final currentUser = FirebaseAuth.instance.currentUser;
     final uid = currentUser?.uid ?? '';
 
@@ -1434,85 +1474,89 @@ class _VolunteerHomeTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Welcome card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: cardColor,
                   borderRadius: BorderRadius.circular(20),
-                  boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 16, offset: Offset(0, 2))],
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x0D000000),
+                      blurRadius: 16,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 24,
-                          backgroundColor: accent.withOpacity(0.2),
-                          child: Icon(
-                            Icons.volunteer_activism_rounded,
-                            color: accent,
-                            size: 28,
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor: accent.withOpacity(0.2),
+                      child: const Icon(
+                        Icons.volunteer_activism_rounded,
+                        color: accent,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'app_name'.tr(),
+                            style: TextStyle(
+                              color: const Color(0xFF1A1A2E),
+                              fontWeight: FontWeight.w700,
+                              fontSize: fs + 2,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'app_name'.tr(),
-                                style: TextStyle(
-                                  color: const Color(0xFF1A1A2E),
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: fs + 2,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'home.welcome'.tr(namedArgs: {'name': displayName}),
-                                style: TextStyle(
-                                  color: const Color(0xFF6B6B80),
-                                  fontSize: fs,
-                                ),
-                              ),
-                            ],
+                          const SizedBox(height: 2),
+                          Text(
+                            'home.welcome'.tr(
+                              namedArgs: {'name': displayName},
+                            ),
+                            style: TextStyle(
+                              color: const Color(0xFF6B6B80),
+                              fontSize: fs,
+                            ),
                           ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isBusy
+                            ? accent.withOpacity(0.2)
+                            : Colors.green.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.circle,
+                            color: isBusy ? accent : Colors.green,
+                            size: 8,
                           ),
-                          decoration: BoxDecoration(
-                            color: isBusy
-                                ? accent.withOpacity(0.2)
-                                : Colors.green.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
+                          const SizedBox(width: 6),
+                          Text(
+                            isBusy
+                                ? 'volunteer_home.helping'.tr()
+                                : 'volunteer_home.available'.tr(),
+                            style: TextStyle(
+                              color: isBusy ? accent : Colors.green,
+                              fontSize: fs - 2,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.circle,
-                                color: isBusy ? accent : Colors.green,
-                                size: 8,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                isBusy ? 'Helping' : 'Available',
-                                style: TextStyle(
-                                  color: isBusy ? accent : Colors.green,
-                                  fontSize: fs - 2,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -1520,7 +1564,6 @@ class _VolunteerHomeTab extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              // Row 1: Current Status banner
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -1558,12 +1601,17 @@ class _VolunteerHomeTab extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Current Status',
-                            style: TextStyle(color: const Color(0xFF9999AA), fontSize: fs - 2),
+                            'volunteer_home.current_status'.tr(),
+                            style: TextStyle(
+                              color: const Color(0xFF9999AA),
+                              fontSize: fs - 2,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            isBusy ? 'Helping a pilgrim' : 'Available',
+                            isBusy
+                                ? 'volunteer_home.helping_pilgrim'.tr()
+                                : 'volunteer_home.available'.tr(),
                             style: TextStyle(
                               color: isBusy ? accent : Colors.green,
                               fontSize: fs + 2,
@@ -1579,7 +1627,6 @@ class _VolunteerHomeTab extends StatelessWidget {
 
               const SizedBox(height: 12),
 
-              // Row 2: Requests Completed banner
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -1593,12 +1640,12 @@ class _VolunteerHomeTab extends StatelessWidget {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFC9973A).withOpacity(0.1),
+                        color: accent.withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
                         Icons.health_and_safety_rounded,
-                        color: Color(0xFFC9973A),
+                        color: accent,
                         size: 24,
                       ),
                     ),
@@ -1608,8 +1655,11 @@ class _VolunteerHomeTab extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Requests Completed',
-                            style: TextStyle(color: const Color(0xFF9999AA), fontSize: fs - 2),
+                            'volunteer_home.requests_completed'.tr(),
+                            style: TextStyle(
+                              color: const Color(0xFF9999AA),
+                              fontSize: fs - 2,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -1629,10 +1679,9 @@ class _VolunteerHomeTab extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              // ── ACTIVE REQUEST / INCOMING REQUESTS SECTION ──
               if (isBusy) ...[
                 Text(
-                  'Active Request',
+                  'volunteer_home.active_request'.tr(),
                   style: TextStyle(
                     color: const Color(0xFF1A1A2E),
                     fontSize: fs + 4,
@@ -1640,101 +1689,152 @@ class _VolunteerHomeTab extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Builder(builder: (context) {
-                  final data = activeRequest!.data() as Map<String, dynamic>;
-                  final type = data['requestType'] as String? ?? 'general_guidance';
-                  final desc = data['description'] as String? ?? '';
-                  final pilgrimName = data['pilgrimName'] as String? ?? 'Pilgrim';
-                  final priority = data['priority'] as int? ?? 3;
+                Builder(
+                  builder: (context) {
+                    final data =
+                        activeRequest!.data() as Map<String, dynamic>;
 
-                  return Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: cardColor,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: accent.withOpacity(0.4), width: 1),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: accent.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(10),
+                    final type =
+                        data['requestType'] as String? ?? 'general_guidance';
+                    final desc = data['description'] as String? ?? '';
+                    final pilgrimName =
+                        data['pilgrimName'] as String? ??
+                            'chat.pilgrim'.tr();
+                    final priority = data['priority'] as int? ?? 3;
+
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: accent.withOpacity(0.4),
+                          width: 1,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: accent.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(
+                                  Icons.person_pin_circle_rounded,
+                                  color: accent,
+                                  size: 22,
+                                ),
                               ),
-                              child: Icon(Icons.person_pin_circle_rounded,
-                                  color: accent, size: 22),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(_typeLabel(type),
-                                    style: TextStyle(color: const Color(0xFF1A1A2E),
-                                      fontSize: fs, fontWeight: FontWeight.w600)),
-                                  const SizedBox(height: 2),
-                                  Text('Pilgrim: $pilgrimName',
-                                    style: TextStyle(
-                                      color: const Color(0xFF9999AA),
-                                      fontSize: fs - 2)),
-                                ],
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _typeLabel(type),
+                                      style: TextStyle(
+                                        color: const Color(0xFF1A1A2E),
+                                        fontSize: fs,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${'volunteer_home.pilgrim_label'.tr()}: $pilgrimName',
+                                      style: TextStyle(
+                                        color: const Color(0xFF9999AA),
+                                        fontSize: fs - 2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: _priorityColor(priority).withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _priorityColor(priority)
+                                      .withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  priority >= 4
+                                      ? 'priority.urgent'.tr()
+                                      : 'volunteer_home.active'.tr(),
+                                  style: TextStyle(
+                                    color: _priorityColor(priority),
+                                    fontSize: fs - 3,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
-                              child: Text(
-                                priority >= 4 ? 'Urgent' : 'Active',
-                                style: TextStyle(
-                                  color: _priorityColor(priority),
-                                  fontSize: fs - 3, fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                          if (desc.isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            Text(
+                              desc,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: const Color(0xFF6B6B80),
+                                fontSize: fs - 1,
+                              ),
                             ),
                           ],
-                        ),
-                        if (desc.isNotEmpty) ...[
-                          const SizedBox(height: 10),
-                          Text(desc, maxLines: 2, overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: const Color(0xFF6B6B80), fontSize: fs - 1)),
-                        ],
-                        const SizedBox(height: 14),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.push(context, MaterialPageRoute(
-                                builder: (_) => ChatPage(
-                                  requestId: activeRequest!.id, myRole: 'volunteer'),
-                              ));
-                            },
-                            icon: const Icon(Icons.chat_rounded, size: 18),
-                            label: Text('Open Chat',
-                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: fs)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: accent,
-                              foregroundColor: Colors.black,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
+                          const SizedBox(height: 14),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ChatPage(
+                                      requestId: activeRequest!.id,
+                                      myRole: 'volunteer',
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(
+                                Icons.chat_rounded,
+                                size: 18,
+                              ),
+                              label: Text(
+                                'volunteer_home.open_chat'.tr(),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: fs,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: accent,
+                                foregroundColor: Colors.black,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ] else ...[
-                // ── INCOMING REQUESTS PREVIEW (when not busy) ──
                 Text(
-                  'Incoming Requests',
+                  'volunteer_home.incoming_requests'.tr(),
                   style: TextStyle(
                     color: const Color(0xFF1A1A2E),
                     fontSize: fs + 4,
@@ -1754,17 +1854,21 @@ class _VolunteerHomeTab extends StatelessWidget {
                           .snapshots()
                       : null,
                   builder: (context, incomingSnap) {
-                    final incomingDocs = (incomingSnap.data?.docs ?? []).where((doc) {
+                    final incomingDocs =
+                        (incomingSnap.data?.docs ?? []).where((doc) {
                       final data = doc.data() as Map<String, dynamic>;
-                      final declinedBy = List<String>.from(data['declinedBy'] ?? []);
+                      final declinedBy =
+                          List<String>.from(data['declinedBy'] ?? []);
                       return !declinedBy.contains(uid);
                     }).toList();
 
                     if (incomingDocs.isEmpty) {
-                      // Waiting for requests — calm empty state
                       return Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 40,
+                          horizontal: 20,
+                        ),
                         decoration: BoxDecoration(
                           color: cardColor,
                           borderRadius: BorderRadius.circular(16),
@@ -1778,18 +1882,28 @@ class _VolunteerHomeTab extends StatelessWidget {
                                 color: accent.withOpacity(0.1),
                                 shape: BoxShape.circle,
                               ),
-                              child: Icon(Icons.notifications_none_rounded,
-                                  color: accent.withOpacity(0.5), size: 28),
+                              child: Icon(
+                                Icons.notifications_none_rounded,
+                                color: accent.withOpacity(0.5),
+                                size: 28,
+                              ),
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'Waiting for requests',
-                              style: TextStyle(color: const Color(0xFF6B6B80), fontSize: fs, fontWeight: FontWeight.w600),
+                              'volunteer_home.waiting_requests'.tr(),
+                              style: TextStyle(
+                                color: const Color(0xFF6B6B80),
+                                fontSize: fs,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              'You\'ll be notified when a pilgrim needs your help',
-                              style: TextStyle(color: const Color(0xFF9999AA), fontSize: fs - 2),
+                              'volunteer_home.waiting_subtitle'.tr(),
+                              style: TextStyle(
+                                color: const Color(0xFF9999AA),
+                                fontSize: fs - 2,
+                              ),
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -1797,15 +1911,21 @@ class _VolunteerHomeTab extends StatelessWidget {
                       );
                     }
 
-                    // Show compact preview cards
                     return Column(
                       children: [
                         ...incomingDocs.map((doc) {
-                          final data = doc.data() as Map<String, dynamic>;
-                          final type = data['requestType'] as String? ?? 'general_guidance';
-                          final priority = data['priority'] as int? ?? 3;
-                          final pilgrimName = data['pilgrimName'] as String? ?? 'Pilgrim';
-                          final createdAt = data['createdAt'] as Timestamp?;
+                          final data =
+                              doc.data() as Map<String, dynamic>;
+                          final type =
+                              data['requestType'] as String? ??
+                                  'general_guidance';
+                          final priority =
+                              data['priority'] as int? ?? 3;
+                          final pilgrimName =
+                              data['pilgrimName'] as String? ??
+                                  'chat.pilgrim'.tr();
+                          final createdAt =
+                              data['createdAt'] as Timestamp?;
 
                           return GestureDetector(
                             onTap: onGoToRequests,
@@ -1813,13 +1933,17 @@ class _VolunteerHomeTab extends StatelessWidget {
                               width: double.infinity,
                               margin: const EdgeInsets.only(bottom: 8),
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 12),
+                                horizontal: 14,
+                                vertical: 12,
+                              ),
                               decoration: BoxDecoration(
                                 color: cardColor,
                                 borderRadius: BorderRadius.circular(12),
                                 border: priority >= 4
                                     ? Border.all(
-                                        color: _priorityColor(priority).withOpacity(0.3))
+                                        color: _priorityColor(priority)
+                                            .withOpacity(0.3),
+                                      )
                                     : null,
                               ),
                               child: Row(
@@ -1827,31 +1951,55 @@ class _VolunteerHomeTab extends StatelessWidget {
                                   Container(
                                     padding: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(
-                                      color: _priorityColor(priority).withOpacity(0.12),
+                                      color: _priorityColor(priority)
+                                          .withOpacity(0.12),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    child: Icon(_typeIcon(type),
-                                        color: _priorityColor(priority), size: 18),
+                                    child: Icon(
+                                      _typeIcon(type),
+                                      color: _priorityColor(priority),
+                                      size: 18,
+                                    ),
                                   ),
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Text(_typeLabel(type),
-                                          style: TextStyle(color: const Color(0xFF1A1A2E),
-                                            fontSize: fs - 1, fontWeight: FontWeight.w600)),
-                                        Text(pilgrimName,
+                                        Text(
+                                          _typeLabel(type),
                                           style: TextStyle(
-                                            color: const Color(0xFF9999AA),
-                                            fontSize: fs - 3)),
+                                            color:
+                                                const Color(0xFF1A1A2E),
+                                            fontSize: fs - 1,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        Text(
+                                          pilgrimName,
+                                          style: TextStyle(
+                                            color:
+                                                const Color(0xFF9999AA),
+                                            fontSize: fs - 3,
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),
-                                  Text(_timeAgo(createdAt),
-                                    style: TextStyle(color: const Color(0xFF9999AA), fontSize: fs - 3)),
+                                  Text(
+                                    _timeAgo(createdAt),
+                                    style: TextStyle(
+                                      color: const Color(0xFF9999AA),
+                                      fontSize: fs - 3,
+                                    ),
+                                  ),
                                   const SizedBox(width: 8),
-                                  const Icon(Icons.chevron_right_rounded, color: Color(0xFFCCCCDD), size: 18),
+                                  const Icon(
+                                    Icons.chevron_right_rounded,
+                                    color: Color(0xFFCCCCDD),
+                                    size: 18,
+                                  ),
                                 ],
                               ),
                             ),
@@ -1862,7 +2010,8 @@ class _VolunteerHomeTab extends StatelessWidget {
                           onTap: onGoToRequests,
                           child: Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
                               color: accent.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
@@ -1870,12 +2019,20 @@ class _VolunteerHomeTab extends StatelessWidget {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text('View all requests',
-                                  style: TextStyle(color: accent, fontSize: fs - 1,
-                                    fontWeight: FontWeight.w600)),
+                                Text(
+                                  'volunteer_home.view_all'.tr(),
+                                  style: TextStyle(
+                                    color: accent,
+                                    fontSize: fs - 1,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                                 const SizedBox(width: 6),
-                                Icon(Icons.arrow_forward_rounded,
-                                    color: accent, size: 16),
+                                const Icon(
+                                  Icons.arrow_forward_rounded,
+                                  color: accent,
+                                  size: 16,
+                                ),
                               ],
                             ),
                           ),
@@ -1913,10 +2070,9 @@ class _VolunteerChatsTabState extends State<_VolunteerChatsTab> {
   @override
   void initState() {
     super.initState();
+
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
-      // Simple single-field query — no composite index needed.
-      // Status filtering happens client-side below.
       _stream = FirebaseFirestore.instance
           .collection('helpRequests')
           .where('assignedVolunteer', isEqualTo: uid)
@@ -1925,23 +2081,48 @@ class _VolunteerChatsTabState extends State<_VolunteerChatsTab> {
   }
 
   String _typeLabel(String? type) {
-    const m = {
-      'medical': 'Medical Assistance',
-      'navigation': 'Navigation Help',
-      'translation': 'Translation Help',
-      'general_guidance': 'General Help',
-      'emergency_response': 'Emergency Response',
-      'crowd_management': 'Crowd Safety',
+    if (type == null || type.isEmpty) {
+      return 'sos.type_general'.tr();
+    }
+
+    final key = switch (type) {
+      'medical' => 'volunteer_application.expertise.medical',
+      'navigation' => 'volunteer_application.expertise.navigation',
+      'translation' => 'volunteer_application.expertise.translation',
+      'general_guidance' =>
+        'volunteer_application.expertise.general_guidance',
+      'emergency_response' =>
+        'volunteer_application.expertise.emergency_response',
+      'crowd_management' =>
+        'volunteer_application.expertise.crowd_management',
+      _ => 'sos.type_general',
     };
-    return m[type] ?? 'General Help';
+
+    return key.tr();
   }
 
   String _timeAgo(Timestamp ts) {
     final diff = DateTime.now().difference(ts.toDate());
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
+
+    if (diff.inMinutes < 1) {
+      return 'time.just_now'.tr();
+    }
+
+    if (diff.inMinutes < 60) {
+      return 'time.minutes_ago'.tr(
+        namedArgs: {'count': diff.inMinutes.toString()},
+      );
+    }
+
+    if (diff.inHours < 24) {
+      return 'time.hours_ago'.tr(
+        namedArgs: {'count': diff.inHours.toString()},
+      );
+    }
+
+    return 'time.days_ago'.tr(
+      namedArgs: {'count': diff.inDays.toString()},
+    );
   }
 
   @override
@@ -1960,7 +2141,7 @@ class _VolunteerChatsTabState extends State<_VolunteerChatsTab> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
               child: Text(
-                'Active Chats',
+                'volunteer_requests.active_chats'.tr(),
                 style: TextStyle(
                   color: const Color(0xFF1A1A2E),
                   fontSize: fs + 6,
@@ -1970,10 +2151,13 @@ class _VolunteerChatsTabState extends State<_VolunteerChatsTab> {
             ),
             Expanded(
               child: _stream == null
-                  ? const Center(
+                  ? Center(
                       child: Text(
-                        'Please log in',
-                        style: TextStyle(color: Color(0xFF6B6B80)),
+                        'errors.not_logged_in'.tr(),
+                        style: TextStyle(
+                          color: const Color(0xFF6B6B80),
+                          fontSize: fs,
+                        ),
                       ),
                     )
                   : StreamBuilder<QuerySnapshot>(
@@ -1989,42 +2173,42 @@ class _VolunteerChatsTabState extends State<_VolunteerChatsTab> {
                         if (snapshot.hasError) {
                           return Center(
                             child: Text(
-                              'Error: ${snapshot.error}',
-                              style: const TextStyle(
+                              'errors.unexpected'.tr(),
+                              style: TextStyle(
                                 color: Colors.red,
-                                fontSize: 13,
+                                fontSize: fs - 1,
                               ),
                             ),
                           );
                         }
 
-                        // Client-side filter: only accepted / in_progress
-                        final docs =
-                            (snapshot.data?.docs ?? []).where((d) {
-                                final s =
-                                    (Map<String, dynamic>.from(
-                                          d.data() as Map? ?? {},
-                                        ))['status']
-                                        as String?;
-                                return s == 'accepted' || s == 'in_progress';
-                              }).toList()
-                              // Sort by acceptedAt descending client-side
-                              ..sort((a, b) {
-                                final ta =
-                                    (Map<String, dynamic>.from(
-                                          a.data() as Map? ?? {},
-                                        ))['acceptedAt']
-                                        as Timestamp?;
-                                final tb =
-                                    (Map<String, dynamic>.from(
-                                          b.data() as Map? ?? {},
-                                        ))['acceptedAt']
-                                        as Timestamp?;
-                                if (ta == null && tb == null) return 0;
-                                if (ta == null) return 1;
-                                if (tb == null) return -1;
-                                return tb.compareTo(ta);
-                              });
+                        final docs = (snapshot.data?.docs ?? []).where((d) {
+                          final data = Map<String, dynamic>.from(
+                            d.data() as Map? ?? {},
+                          );
+
+                          final status = data['status'] as String?;
+
+                          return status == 'accepted' ||
+                              status == 'in_progress';
+                        }).toList()
+                          ..sort((a, b) {
+                            final dataA = Map<String, dynamic>.from(
+                              a.data() as Map? ?? {},
+                            );
+                            final dataB = Map<String, dynamic>.from(
+                              b.data() as Map? ?? {},
+                            );
+
+                            final ta = dataA['acceptedAt'] as Timestamp?;
+                            final tb = dataB['acceptedAt'] as Timestamp?;
+
+                            if (ta == null && tb == null) return 0;
+                            if (ta == null) return 1;
+                            if (tb == null) return -1;
+
+                            return tb.compareTo(ta);
+                          });
 
                         if (docs.isEmpty) {
                           return Center(
@@ -2038,13 +2222,19 @@ class _VolunteerChatsTabState extends State<_VolunteerChatsTab> {
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
-                                  'No active chats',
-                                  style: TextStyle(color: const Color(0xFF6B6B80), fontSize: fs),
+                                  'volunteer_requests.no_active'.tr(),
+                                  style: TextStyle(
+                                    color: const Color(0xFF6B6B80),
+                                    fontSize: fs,
+                                  ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Accept a request to start chatting',
-                                  style: TextStyle(color: const Color(0xFF9999AA), fontSize: fs - 2),
+                                  'chat.accept_to_start'.tr(),
+                                  style: TextStyle(
+                                    color: const Color(0xFF9999AA),
+                                    fontSize: fs - 2,
+                                  ),
                                 ),
                               ],
                             ),
@@ -2061,14 +2251,20 @@ class _VolunteerChatsTabState extends State<_VolunteerChatsTab> {
                             final data = Map<String, dynamic>.from(
                               docs[i].data() as Map? ?? {},
                             );
+
                             final pilgrimName =
-                                data['pilgrimName'] as String? ?? 'Pilgrim';
+                                data['pilgrimName'] as String? ??
+                                    'chat.pilgrim'.tr();
+
                             final type =
                                 data['requestType'] as String? ??
-                                'general_guidance';
+                                    'general_guidance';
+
                             final lastMsg =
                                 data['lastMessage'] as String? ?? '';
-                            final acceptedAt = data['acceptedAt'] as Timestamp?;
+
+                            final acceptedAt =
+                                data['acceptedAt'] as Timestamp?;
 
                             return GestureDetector(
                               onTap: () => Navigator.push(
@@ -2113,7 +2309,8 @@ class _VolunteerChatsTabState extends State<_VolunteerChatsTab> {
                                           Text(
                                             pilgrimName,
                                             style: TextStyle(
-                                              color: const Color(0xFF1A1A2E),
+                                              color:
+                                                  const Color(0xFF1A1A2E),
                                               fontSize: fs,
                                               fontWeight: FontWeight.w600,
                                             ),
@@ -2122,7 +2319,8 @@ class _VolunteerChatsTabState extends State<_VolunteerChatsTab> {
                                           Text(
                                             _typeLabel(type),
                                             style: TextStyle(
-                                              color: accent.withOpacity(0.8),
+                                              color:
+                                                  accent.withOpacity(0.8),
                                               fontSize: fs - 3,
                                               fontWeight: FontWeight.w500,
                                             ),
@@ -2133,7 +2331,11 @@ class _VolunteerChatsTabState extends State<_VolunteerChatsTab> {
                                               lastMsg,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(color: const Color(0xFF9999AA), fontSize: fs - 3),
+                                              style: TextStyle(
+                                                color:
+                                                    const Color(0xFF9999AA),
+                                                fontSize: fs - 3,
+                                              ),
                                             ),
                                           ],
                                         ],
@@ -2153,7 +2355,8 @@ class _VolunteerChatsTabState extends State<_VolunteerChatsTab> {
                                           Text(
                                             _timeAgo(acceptedAt),
                                             style: TextStyle(
-                                              color: const Color(0xFF9999AA),
+                                              color:
+                                                  const Color(0xFF9999AA),
                                               fontSize: fs - 4,
                                             ),
                                           ),

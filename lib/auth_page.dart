@@ -11,7 +11,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:provider/provider.dart';
 
+import 'app_settings_provider.dart';
 import 'home_pages.dart';
 import 'volunteer_application_page.dart';
 import 'pending_approval_page.dart';
@@ -39,6 +42,12 @@ class _AuthPageState extends State<AuthPage> {
   bool _isLoading = false;
   String? _errorMessage;
 
+  static const Color _background = Color(0xFFF7F4EF);
+  static const Color _textColor = Color(0xFF1A1A2E);
+  static const Color _mutedColor = Color(0xFF6B6B80);
+  static const Color _borderColor = Color(0xFFE8E4DE);
+  static const Color _accent = Color(0xFFC9973A);
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -49,24 +58,26 @@ class _AuthPageState extends State<AuthPage> {
   }
 
   String get _roleLabel {
-    if (widget.role == 'hajj_performer') return 'Hajj Performer';
-    if (widget.role == 'volunteer') return 'Volunteer';
+    if (widget.role == 'hajj_performer') return 'auth.role_hajj'.tr();
+    if (widget.role == 'volunteer') return 'auth.role_volunteer'.tr();
     return widget.role;
   }
 
   String get _titleText {
-    final action = _isLogin ? 'Login' : 'Sign Up';
-    return '$action as $_roleLabel';
+    return _isLogin
+        ? 'auth.login_as'.tr(namedArgs: {'role': _roleLabel})
+        : 'auth.signup_as'.tr(namedArgs: {'role': _roleLabel});
   }
 
   String get _switchText {
     return _isLogin
-        ? "Don't have an account? Sign up"
-        : "Already have an account? Login";
+        ? 'auth.no_account'.tr()
+        : 'auth.already_have_account'.tr();
   }
 
   void _submit() async {
     if (!_formKey.currentState!.validate()) return;
+
     if (_isLogin) {
       await _login();
     } else {
@@ -117,6 +128,7 @@ class _AuthPageState extends State<AuthPage> {
       } else {
         final data = doc.data();
         final existingRole = data?['role'] as String?;
+
         if (existingRole == null) {
           role = widget.role;
           await docRef.update({
@@ -130,22 +142,18 @@ class _AuthPageState extends State<AuthPage> {
 
       // 3) Navigate based on role
       await _navigateByRole(role, uid);
-      
     } on FirebaseAuthException catch (e) {
       setState(() {
-        _errorMessage =
-            e.message ?? 'Authentication error (${e.code}), please try again.';
+        _errorMessage = e.message ?? 'errors.auth_generic'.tr();
       });
     } catch (e) {
-      print('UNEXPECTED LOGIN ERROR: $e');
+      debugPrint('UNEXPECTED LOGIN ERROR: $e');
       setState(() {
-        _errorMessage = 'Unexpected error: $e';
+        _errorMessage = 'errors.unexpected'.tr();
       });
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -156,7 +164,7 @@ class _AuthPageState extends State<AuthPage> {
   Future<void> _signup() async {
     if (_passwordController.text != _confirmPasswordController.text) {
       setState(() {
-        _errorMessage = 'Passwords do not match';
+        _errorMessage = 'errors.passwords_mismatch'.tr();
       });
       return;
     }
@@ -186,21 +194,18 @@ class _AuthPageState extends State<AuthPage> {
 
       // 3) Navigate based on role
       await _navigateByRole(widget.role, uid);
-      
     } on FirebaseAuthException catch (e) {
       setState(() {
-        _errorMessage = e.message ?? 'Something went wrong during sign up.';
+        _errorMessage = e.message ?? 'errors.auth_generic'.tr();
       });
     } catch (e) {
-      print('UNEXPECTED SIGNUP ERROR: $e');
+      debugPrint('UNEXPECTED SIGNUP ERROR: $e');
       setState(() {
-        _errorMessage = 'Unexpected error: $e';
+        _errorMessage = 'errors.unexpected'.tr();
       });
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -288,15 +293,18 @@ class _AuthPageState extends State<AuthPage> {
   // =========================================================================
   @override
   Widget build(BuildContext context) {
-    const accent = Color(0xFFC9973A);
+    final fs = context.watch<AppSettingsProvider>().fontSize;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F4EF),
+      backgroundColor: _background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F4EF),
+        backgroundColor: _background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1A1A2E)),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: _textColor,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -311,241 +319,261 @@ class _AuthPageState extends State<AuthPage> {
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
-                  side: const BorderSide(color: Color(0xFFE8E4DE)),
+                  side: const BorderSide(color: _borderColor),
                 ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 24,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 24,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
                         // Logo
-                        Image.asset(
-                          'assets/images/logo.png',
-                          height: 56,
-                        ),
-                        const SizedBox(height: 12),
+                      Image.asset(
+                        'assets/images/logo.png',
+                        height: 56,
+                      ),
+                      const SizedBox(height: 12),
 
                         // Title
-                        Text(
-                          _titleText,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      Text(
+                        _titleText,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: fs + 8,
+                          fontWeight: FontWeight.bold,
+                          color: _textColor,
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Using your Noor Al-Tariq account',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.65),
-                          ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'auth.account_subtitle'.tr(),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: fs - 1,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.65),
                         ),
+                      ),
 
                         // NEW: Info for volunteers
-                        if (widget.role == 'volunteer') ...[
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: accent.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: accent.withOpacity(0.3),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.info_outline,
-                                  color: accent,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    'After signing up, you\'ll complete an application form for admin review.',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Color(0xFF6B6B80),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                      if (widget.role == 'volunteer') ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: _accent.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: _accent.withOpacity(0.3),
                             ),
                           ),
-                        ],
-
-                        const SizedBox(height: 24),
-
-                        // Error message
-                        if (_errorMessage != null) ...[
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(10),
-                            margin: const EdgeInsets.only(bottom: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.08),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.red.withOpacity(0.5),
-                              ),
-                            ),
-                            child: Text(
-                              _errorMessage!,
-                              style: const TextStyle(
-                                color: Colors.red,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ],
-
-                        // Form
-                        Form(
-                          key: _formKey,
-                          child: Column(
+                          child: Row(
                             children: [
-                              // Full Name only in Sign Up mode
-                              if (!_isLogin) ...[
-                                TextFormField(
-                                  controller: _nameController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Full Name',
-                                    prefixIcon: Icon(Icons.person_outline),
-                                  ),
-                                  validator: (value) {
-                                    if (_isLogin) return null;
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'Please enter your full name';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 16),
-                              ],
-
-                              TextFormField(
-                                controller: _emailController,
-                                keyboardType: TextInputType.emailAddress,
-                                decoration: const InputDecoration(
-                                  labelText: 'Email',
-                                  prefixIcon: Icon(Icons.email_outlined),
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.trim().isEmpty) {
-                                    return 'Please enter your email';
-                                  }
-                                  if (!value.contains('@')) {
-                                    return 'Please enter a valid email';
-                                  }
-                                  return null;
-                                },
+                              Icon(
+                                Icons.info_outline,
+                                color: _accent,
+                                size: fs + 6,
                               ),
-                              const SizedBox(height: 16),
-
-                              TextFormField(
-                                controller: _passwordController,
-                                obscureText: true,
-                                decoration: const InputDecoration(
-                                  labelText: 'Password',
-                                  prefixIcon: Icon(Icons.lock_outline),
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter your password';
-                                  }
-                                  if (value.length < 6) {
-                                    return 'Password must be at least 6 characters';
-                                  }
-                                  return null;
-                                },
-                              ),
-
-                              if (!_isLogin) ...[
-                                const SizedBox(height: 16),
-                                TextFormField(
-                                  controller: _confirmPasswordController,
-                                  obscureText: true,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Confirm Password',
-                                    prefixIcon: Icon(Icons.lock_outline),
-                                  ),
-                                  validator: (value) {
-                                    if (_isLogin) return null;
-                                    if (value == null || value.isEmpty) {
-                                      return 'Please confirm your password';
-                                    }
-                                    if (value != _passwordController.text) {
-                                      return 'Passwords do not match';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ],
-
-                              const SizedBox(height: 24),
-
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: _isLoading ? null : _submit,
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12,
-                                    ),
-                                    backgroundColor: accent,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                  ),
-                                  child: _isLoading
-                                      ? const SizedBox(
-                                          height: 18,
-                                          width: 18,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        )
-                                      : Text(
-                                          _isLogin ? 'Login' : 'Sign Up',
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                ),
-                              ),
-
-                              const SizedBox(height: 12),
-
-                              TextButton(
-                                onPressed: _isLoading ? null : _toggleMode,
+                              const SizedBox(width: 12),
+                              Expanded(
                                 child: Text(
-                                  _switchText,
-                                  style: const TextStyle(fontSize: 13),
-                                  textAlign: TextAlign.center,
+                                  'auth.volunteer_info'.tr(),
+                                  style: TextStyle(
+                                    fontSize: fs - 2,
+                                    color: _mutedColor,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ],
-                    ),
+
+                      const SizedBox(height: 24),
+
+                        // Error message
+                      if (_errorMessage != null) ...[
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(10),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.red.withOpacity(0.5),
+                            ),
+                          ),
+                          child: Text(
+                            _errorMessage!,
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontSize: fs - 1,
+                            ),
+                          ),
+                        ),
+                      ],
+
+                        // Form
+                      Form(
+                        key: _formKey,
+                        child: Column(
+                          children: [
+                              // Full Name only in Sign Up mode
+                            if (!_isLogin) ...[
+                              TextFormField(
+                                controller: _nameController,
+                                style: TextStyle(fontSize: fs),
+                                decoration: InputDecoration(
+                                  labelText: 'auth.full_name'.tr(),
+                                  prefixIcon:
+                                      const Icon(Icons.person_outline),
+                                ),
+                                validator: (value) {
+                                  if (_isLogin) return null;
+
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'errors.name_required'.tr();
+                                  }
+
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+
+                            TextFormField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              style: TextStyle(fontSize: fs),
+                              decoration: InputDecoration(
+                                labelText: 'auth.email'.tr(),
+                                prefixIcon: const Icon(Icons.email_outlined),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'errors.email_required'.tr();
+                                }
+
+                                if (!value.contains('@')) {
+                                  return 'errors.email_invalid'.tr();
+                                }
+
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            TextFormField(
+                              controller: _passwordController,
+                              obscureText: true,
+                              style: TextStyle(fontSize: fs),
+                              decoration: InputDecoration(
+                                labelText: 'auth.password'.tr(),
+                                prefixIcon: const Icon(Icons.lock_outline),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'errors.password_required'.tr();
+                                }
+
+                                if (value.length < 6) {
+                                  return 'errors.password_short'.tr();
+                                }
+
+                                return null;
+                              },
+                            ),
+
+                            if (!_isLogin) ...[
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _confirmPasswordController,
+                                obscureText: true,
+                                style: TextStyle(fontSize: fs),
+                                decoration: InputDecoration(
+                                  labelText: 'auth.confirm_password'.tr(),
+                                  prefixIcon:
+                                      const Icon(Icons.lock_outline),
+                                ),
+                                validator: (value) {
+                                  if (_isLogin) return null;
+
+                                  if (value == null || value.isEmpty) {
+                                    return 'errors.password_confirm'.tr();
+                                  }
+
+                                  if (value != _passwordController.text) {
+                                    return 'errors.passwords_mismatch'.tr();
+                                  }
+
+                                  return null;
+                                },
+                              ),
+                            ],
+
+                            const SizedBox(height: 24),
+
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : _submit,
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  backgroundColor: _accent,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                child: _isLoading
+                                    ? const SizedBox(
+                                        height: 18,
+                                        width: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : Text(
+                                        _isLogin
+                                            ? 'auth.login'.tr()
+                                            : 'auth.signup'.tr(),
+                                        style: TextStyle(
+                                          fontSize: fs + 2,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            TextButton(
+                              onPressed: _isLoading ? null : _toggleMode,
+                              child: Text(
+                                _switchText,
+                                style: TextStyle(fontSize: fs - 1),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
           ),
         ),
+      ),
     );
   }
 }

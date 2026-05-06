@@ -16,8 +16,7 @@
     "no": "No",
     "ok": "OK",
     "select": "Select",
-    "select_all": "Select all that apply",
-    "coming_soon": "Coming soon"
+    "select_all": "Select all that apply"
   },
   "errors": {
     "unexpected": "An unexpected error occurred. Please try again.",
@@ -40,7 +39,9 @@
     "expertise_required": "Please select at least one area of expertise.",
     "language_required": "Please select at least one language.",
     "emergency_name_required": "Emergency contact name is required",
-    "emergency_phone_required": "Phone number is required"
+    "emergency_phone_required": "Phone number is required",
+    "index_required": "Index required. Check console for the link to create it.",
+    "could_not_accept": "Could not accept request"
   },
   "role_selection": {
     "greeting": "As-salamu alaykum",
@@ -65,6 +66,8 @@
     "password": "Password",
     "confirm_password": "Confirm Password",
     "already_have_account": "Already have an account? Login",
+    "switch_login": "Already have an account? Login",
+    "switch_signup": "Don't have an account? Sign up",
     "no_account": "Don't have an account? Sign up",
     "role_hajj": "Hajj Performer",
     "role_volunteer": "Volunteer"
@@ -72,7 +75,6 @@
   "home": {
     "loading_profile": "Loading your profile...",
     "welcome": "Welcome, {name}",
-    "sos": "SOS   Request Help",
     "next_prayer": "Next Prayer",
     "prayer_time_label": "Makkah time",
     "daily_dua_title": "Daily Dua",
@@ -87,8 +89,8 @@
   },
   "nav": {
     "home": "Home",
-    "prayers": "Prayers",
     "chatbot": "Chatbot",
+    "get_help": "Get Help",
     "map": "Map",
     "settings": "Settings",
     "requests": "Requests",
@@ -243,6 +245,220 @@
     "requests_completed": "Requests Completed",
     "active_requests": "Active Requests",
     "no_requests": "No active requests",
-    "no_requests_subtitle": "Help requests from pilgrims will appear here"
+    "no_requests_subtitle": "Help requests from pilgrims will appear here",
+    "helping": "Helping",
+    "available": "Available",
+    "current_status": "Current Status",
+    "active_request": "Active Request",
+    "incoming_requests": "Incoming Requests",
+    "helping_pilgrim": "Helping a pilgrim",
+    "pilgrim_label": "Pilgrim",
+    "open_chat": "Open Chat",
+    "waiting_requests": "Waiting for requests",
+    "waiting_subtitle": "You'll be notified when a pilgrim needs your help",
+    "view_all": "View all requests"
+  },
+  "languages": {
+    "arabic": "Arabic",
+    "english": "English",
+    "urdu": "Urdu",
+    "turkish": "Turkish",
+    "indonesian": "Indonesian",
+    "malay": "Malay",
+    "french": "French",
+    "other": "Other"
+  },
+  "volunteer_requests": {
+    "title": "Incoming Requests",
+    "subtitle": "Showing requests matching your expertise",
+    "empty_title": "No requests right now",
+    "empty_subtitle": "New help requests will appear here",
+    "decline": "Decline",
+    "accept": "Accept",
+    "active_chats": "My Active Chats",
+    "no_active": "No active chats",
+    "accept_chat": "Accept & Chat",
+    "already_active": "You already have an active request. Resolve it first before accepting a new one.",
+    "ambulance": "Ambulance",
+    "help_request": "Help Request"
+  },
+  "chat": {
+    "chat_with": "Chat with {name}",
+    "live_status": "Live",
+    "resolved_status": "Resolved",
+    "resolve": "Resolve",
+    "mark_resolved_title": "Resolve Request",
+    "mark_resolved_body": "Are you sure you want to mark this request as resolved?",
+    "yes_resolved": "Yes, resolve",
+    "type_message": "Type a message...",
+    "failed_send": "Failed to send: {error}",
+    "pilgrim": "Pilgrim",
+    "volunteer": "Volunteer",
+    "description": "Description",
+    "location": "Location",
+    "location_not_shared": "Location not shared",
+    "copy_coordinates": "Copy coordinates",
+    "coordinates_copied": "Coordinates copied",
+    "empty_volunteer": "Start chatting to assist the pilgrim",
+    "empty_pilgrim": "Start chatting to request help",
+    "request_resolved": "This request has been resolved",
+    "see_original": "See original",
+    "hide_original": "Hide original",
+    "priority_life_threatening": "Life-threatening",
+    "priority_urgent": "Urgent",
+    "priority_moderate": "Moderate",
+    "priority_mild": "Mild",
+    "priority_low": "Low",
+    "ambulance": "Ambulance",
+    "accepted_message": "{name} has accepted your request and is on the way!",
+    "accept_to_start": "Accept a request to start chatting"
+  },
+  "map": {
+    "title": "Map",
+    "live": "LIVE",
+    "offline": "OFFLINE",
+    "category_all": "All",
+    "category_holy": "Holy Sites",
+    "category_gates": "Gates",
+    "category_services": "Services",
+    "tap_to_navigate": "Tap to navigate",
+    "navigating": "Navigating...",
+    "finding_route": "Finding the best route...",
+    "location_error": "⚠️ Could not get your location. Please enable GPS.",
+    "route_error": "⚠️ Could not find a route. Try again.",
+    "crowd_level": "Crowd Level",
+    "safe": "Safe",
+    "medium": "Medium",
+    "crowded": "Crowded",
+    "updated": "Updated {time}",
+    "just_now": "just now",
+    "seconds_ago": "{seconds}s ago",
+    "minutes_ago": "{minutes}m ago",
+    "crowded_area_ahead": "Crowded Area Ahead",
+    "status": "Status",
+    "meters_away": "{distance} meters away",
+    "safety_tip": "Consider waiting or taking an alternative route for your safety.",
+    "dismiss": "Dismiss",
+    "show_on_map": "Show on Map",
+    "best_time_to_visit": "Best Time to Visit",
+    "got_it": "Got it",
+    "route_crowded_warning": "Path goes through a crowded area",
+    "distance_meters": "{meters} m",
+    "distance_km": "{km} km",
+    "duration_minutes": "{minutes} min",
+    "duration_hours_minutes": "{hours} h {minutes} min"
+  },
+  "crowd_zones": {
+    "mataf": {
+      "name": "Mataf Area"
+    },
+    "saee_zone": {
+      "name": "Sa'i Area"
+    },
+    "gate_zone": {
+      "name": "Gate Area"
+    },
+    "outer": {
+      "name": "Outer Area"
+    }
+  },
+  "places": {
+    "kaaba": {
+      "name": "Kaaba",
+      "description": "The holiest site in Islam"
+    },
+    "saee": {
+      "name": "Sa'i Area",
+      "description": "Walkway between Safa and Marwah"
+    },
+    "mina": {
+      "name": "Mina",
+      "description": "Pilgrims camp during Hajj"
+    },
+    "arafat": {
+      "name": "Arafat",
+      "description": "The site of standing on the Day of Arafah"
+    },
+    "muzdalifah": {
+      "name": "Muzdalifah",
+      "description": "Overnight stay area after Arafat"
+    },
+    "jamarat": {
+      "name": "Jamarat",
+      "description": "Stone-throwing ritual site"
+    },
+    "gate_abdulaziz": {
+      "name": "King Abdulaziz Gate",
+      "description": "One of the main entrances to the Haram"
+    },
+    "gate_fahd": {
+      "name": "King Fahd Gate",
+      "description": "A major entrance to Masjid al-Haram"
+    },
+    "gate_umrah": {
+      "name": "Umrah Gate",
+      "description": "Entrance designated for Umrah pilgrims"
+    },
+    "toilets": {
+      "name": "Public Restrooms",
+      "description": "Restroom facilities for pilgrims"
+    },
+    "police": {
+      "name": "Police Station",
+      "description": "Security and assistance center"
+    },
+    "hospital": {
+      "name": "Hospital",
+      "description": "Emergency medical services"
+    },
+    "zamzam": {
+      "name": "Zamzam Water",
+      "description": "Zamzam water distribution point"
+    }
+  },
+  "sos": {
+    "title": "Request Help",
+    "speaking_language": "Speaking language:",
+    "type_or_speak": "Type or speak here...",
+    "send_sos": "Send SOS Request",
+    "my_requests": "My Requests",
+    "no_requests_yet": "No requests yet",
+    "requests_will_appear": "Your help requests will appear here",
+    "open_chat": "Open Chat",
+    "speech_not_available": "Speech recognition is not available",
+    "describe_problem": "Please describe your problem",
+    "type_medical": "Medical",
+    "type_navigation": "Navigation",
+    "type_translation": "Translation",
+    "type_general_guidance": "General Help",
+    "type_emergency_response": "Emergency",
+    "type_crowd_management": "Crowd Management",
+    "type_general": "General",
+    "status_pending": "Looking for volunteer...",
+    "status_assigned": "Volunteer found, waiting for response...",
+    "status_accepted": "Volunteer is on the way!",
+    "status_in_progress": "Help in progress",
+    "status_resolved": "Resolved",
+    "status_declined": "Looking for another volunteer...",
+    "status_cancelled": "Cancelled",
+    "request_sent": "Request sent, type: {type}",
+    "volunteer_name": "Volunteer: {name}",
+    "translating": "Translating...",
+    "listening_ar": "Listening in Arabic...",
+    "listening_en": "Listening in English..."
+  },
+  "time": {
+    "just_now": "Just now",
+    "minutes_ago": "{count}m ago",
+    "hours_ago": "{count}h ago",
+    "days_ago": "{count}d ago"
+  },
+  "priority": {
+    "life_threatening": "Life-Threatening",
+    "urgent": "Urgent",
+    "moderate": "Moderate",
+    "mild": "Mild",
+    "low": "Low",
+    "unknown": "Unknown"
   }
 }

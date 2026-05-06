@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
@@ -17,7 +18,7 @@ class CrowdApiService {
       final response = await http.get(url).timeout(const Duration(seconds: 5));
 
       if (response.statusCode != 200) {
-        print("Crowd API returned status ${response.statusCode}");
+        debugPrint("Crowd API returned status ${response.statusCode}");
         return CrowdData.sampleZones;
       }
 
@@ -25,9 +26,11 @@ class CrowdApiService {
       final List<dynamic> zonesJson = data["zones"];
 
       final zones = zonesJson.map((z) {
+        final id = z["id"] as String;
+
         return CrowdZone(
-          id: z["id"],
-          name: z["name"],
+          id: id,
+          nameKey: "crowd_zones.$id.name",
           center: LatLng(z["lat"], z["lng"]),
           radius: (z["radius"] as num).toDouble(),
           density: (z["density"] as num).toDouble(),
@@ -36,10 +39,10 @@ class CrowdApiService {
         );
       }).toList();
 
-      print("✅ Fetched ${zones.length} live crowd zones from API");
+      debugPrint("✅ Fetched ${zones.length} live crowd zones from API");
       return zones;
     } catch (e) {
-      print("⚠️ Could not reach crowd API ($e). Using fallback data.");
+      debugPrint("⚠️ Could not reach crowd API ($e). Using fallback data.");
       return CrowdData.sampleZones;
     }
   }

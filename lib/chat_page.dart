@@ -11,16 +11,21 @@ import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:easy_localization/easy_localization.dart' hide TextDirection;
+import 'package:provider/provider.dart';
+
+import 'app_settings_provider.dart';
 import 'services/translation_service.dart';
 
 class ChatPage extends StatefulWidget {
   /// The Firestore doc ID under 'helpRequests'
   final String requestId;
+  final String myRole; // 'pilgrim' or 'volunteer'
 
-  /// 'pilgrim' or 'volunteer'
-  final String myRole;
-
-  const ChatPage({super.key, required this.requestId, required this.myRole});
+  const ChatPage({
+    super.key,
+    required this.requestId,
+    required this.myRole,
+  });
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -29,6 +34,7 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+
   bool _isSending = false;
   bool _missionExpanded = true; // volunteer sees full card by default
 
@@ -37,7 +43,13 @@ class _ChatPageState extends State<ChatPage> {
   static const _card = Color(0xFFFFFFFF);
   static const _accent = Color(0xFFC9973A);
 
-  // ── helpers ─────────────────────────────────────────────────────────────────
+  @override
+  void dispose() {
+    _messageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   String _formatTime(Timestamp? ts) {
     if (ts == null) return '';
     final dt = ts.toDate();
@@ -62,15 +74,15 @@ class _ChatPageState extends State<ChatPage> {
   String _priorityLabel(int p) {
     switch (p) {
       case 5:
-        return 'Life-Threatening';
+        return 'chat.priority_life_threatening'.tr();
       case 4:
-        return 'Urgent';
+        return 'chat.priority_urgent'.tr();
       case 3:
-        return 'Moderate';
+        return 'chat.priority_moderate'.tr();
       case 2:
-        return 'Mild';
+        return 'chat.priority_mild'.tr();
       default:
-        return 'Low';
+        return 'chat.priority_low'.tr();
     }
   }
 
@@ -92,24 +104,36 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   String _typeLabel(String? t) {
-    const m = {
-      'medical': 'Medical Assistance',
-      'navigation': 'Navigation Help',
-      'translation': 'Translation Help',
-      'general_guidance': 'General Help',
-      'emergency_response': 'Emergency Response',
-      'crowd_management': 'Crowd Safety',
-    };
-    return m[t] ?? t ?? 'Help Request';
+    switch (t) {
+      case 'medical':
+        return 'volunteer_application.expertise.medical'.tr();
+      case 'navigation':
+        return 'volunteer_application.expertise.navigation'.tr();
+      case 'translation':
+        return 'volunteer_application.expertise.translation'.tr();
+      case 'general_guidance':
+        return 'volunteer_application.expertise.general_guidance'.tr();
+      case 'emergency_response':
+        return 'volunteer_application.expertise.emergency_response'.tr();
+      case 'crowd_management':
+        return 'volunteer_application.expertise.crowd_management'.tr();
+      default:
+        return t ?? 'chat.help_request'.tr();
+    }
   }
 
-  // ── send message ────────────────────────────────────────────────────────────
+  String _languageLabel(String lang) {
+    return lang == 'ar' ? 'languages.arabic'.tr() : 'languages.english'.tr();
+  }
+
   Future<void> _sendMessage() async {
     final user = FirebaseAuth.instance.currentUser;
     final text = _messageController.text.trim();
+
     if (user == null || text.isEmpty || _isSending) return;
 
     setState(() => _isSending = true);
+
     try {
       final chatRef = FirebaseFirestore.instance
           .collection('helpRequests')
@@ -129,10 +153,10 @@ class _ChatPageState extends State<ChatPage> {
           .collection('helpRequests')
           .doc(widget.requestId)
           .update({
-            'lastMessage': text,
-            'lastMessageSender': widget.myRole,
-            'lastMessageTime': FieldValue.serverTimestamp(),
-          });
+        'lastMessage': text,
+        'lastMessageSender': widget.myRole,
+        'lastMessageTime': FieldValue.serverTimestamp(),
+      });
 
       _messageController.clear();
 
@@ -148,9 +172,12 @@ class _ChatPageState extends State<ChatPage> {
       });
     } catch (e) {
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to send: $e'),
+          content: Text(
+            'chat.failed_send'.tr(namedArgs: {'error': '$e'}),
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -165,9 +192,10 @@ class _ChatPageState extends State<ChatPage> {
         .collection('helpRequests')
         .doc(widget.requestId)
         .update({
-          'status': 'resolved',
-          'resolvedAt': FieldValue.serverTimestamp(),
-        });
+      'status': 'resolved',
+      'resolvedAt': FieldValue.serverTimestamp(),
+    });
+
     if (!mounted) return;
     Navigator.pop(context);
   }
@@ -175,6 +203,8 @@ class _ChatPageState extends State<ChatPage> {
   // ── build ───────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
+    final fs = context.watch<AppSettingsProvider>().fontSize;
+
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
           .collection('helpRequests')
@@ -184,13 +214,14 @@ class _ChatPageState extends State<ChatPage> {
         final reqData = Map<String, dynamic>.from(
           (reqSnap.data?.data() as Map?) ?? {},
         );
+
         final status = reqData['status'] as String? ?? 'accepted';
         final type = reqData['requestType'] as String? ?? 'general_guidance';
         final description = reqData['description'] as String? ?? '';
         final priority = reqData['priority'] as int? ?? 3;
-        final pilgrimName = reqData['pilgrimName'] as String? ?? 'Pilgrim';
+        final pilgrimName = reqData['pilgrimName'] as String? ?? 'chat.pilgrim'.tr();
         final volunteerName =
-            reqData['volunteerName'] as String? ?? 'Volunteer';
+            reqData['volunteerName'] as String? ?? 'chat.volunteer'.tr();
         final needsAmb = reqData['needsAmbulance'] as bool? ?? false;
         final language = reqData['language'] as String? ?? 'en';
         final location = reqData['pilgrimLocation'] as GeoPoint?;
@@ -198,8 +229,8 @@ class _ChatPageState extends State<ChatPage> {
 
         final isVolunteer = widget.myRole == 'volunteer';
         final appBarTitle = isVolunteer
-            ? 'Chat with $pilgrimName'
-            : 'Chat with $volunteerName';
+            ? 'chat.chat_with'.tr(namedArgs: {'name': pilgrimName})
+            : 'chat.chat_with'.tr(namedArgs: {'name': volunteerName});
 
         return Scaffold(
           backgroundColor: _bg,
@@ -211,17 +242,17 @@ class _ChatPageState extends State<ChatPage> {
               children: [
                 Text(
                   appBarTitle,
-                  style: const TextStyle(
-                    color: Color(0xFF1A1A2E),
+                  style: TextStyle(
+                    color: const Color(0xFF1A1A2E),
                     fontWeight: FontWeight.w700,
-                    fontSize: 16,
+                    fontSize: fs + 2,
                   ),
                 ),
                 Text(
-                  isResolved ? '✓ Resolved' : '● Live',
+                  isResolved ? 'chat.resolved_status'.tr() : 'chat.live_status'.tr(),
                   style: TextStyle(
                     color: isResolved ? Colors.green : _accent,
-                    fontSize: 12,
+                    fontSize: fs - 2,
                   ),
                 ),
               ],
@@ -235,9 +266,12 @@ class _ChatPageState extends State<ChatPage> {
                     color: Colors.green,
                     size: 18,
                   ),
-                  label: const Text(
-                    'Resolve',
-                    style: TextStyle(color: Colors.green, fontSize: 13),
+                  label: Text(
+                    'chat.resolve'.tr(),
+                    style: TextStyle(
+                      color: Colors.green,
+                      fontSize: fs - 1,
+                    ),
                   ),
                 ),
             ],
@@ -252,6 +286,7 @@ class _ChatPageState extends State<ChatPage> {
                   priority: priority,
                   pilgrimName: pilgrimName,
                   language: language,
+                  languageLabel: _languageLabel(language),
                   needsAmbulance: needsAmb,
                   location: location,
                   expanded: _missionExpanded,
@@ -261,6 +296,7 @@ class _ChatPageState extends State<ChatPage> {
                   priorityLabel: _priorityLabel(priority),
                   typeIcon: _typeIcon(type),
                   typeLabel: _typeLabel(type),
+                  fs: fs,
                   onOpenMap: null,
                 ),
 
@@ -284,26 +320,29 @@ class _ChatPageState extends State<ChatPage> {
 
                     if (docs.isEmpty) {
                       return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.chat_bubble_outline,
-                              size: 48,
-                              color: Color(0xFFCCCCDD),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              isVolunteer
-                                  ? 'Send a message to let the pilgrim know you\'re on the way!'
-                                  : 'Your volunteer will be in touch shortly.',
-                              style: const TextStyle(
-                                color: Color(0xFF6B6B80),
-                                fontSize: 13,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.chat_bubble_outline,
+                                size: 48,
+                                color: Color(0xFFCCCCDD),
                               ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+                              const SizedBox(height: 12),
+                              Text(
+                                isVolunteer
+                                    ? 'chat.empty_volunteer'.tr()
+                                    : 'chat.empty_pilgrim'.tr(),
+                                style: TextStyle(
+                                  color: const Color(0xFF6B6B80),
+                                  fontSize: fs - 1,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     }
@@ -328,6 +367,7 @@ class _ChatPageState extends State<ChatPage> {
                         final d = Map<String, dynamic>.from(
                           docs[i].data() as Map? ?? {},
                         );
+
                         final senderId = d['senderId'] as String? ?? '';
                         final text = d['text'] as String? ?? '';
                         final sentAt = d['sentAt'] as Timestamp?;
@@ -339,6 +379,7 @@ class _ChatPageState extends State<ChatPage> {
                           time: _formatTime(sentAt),
                           isMine: isMine,
                           role: role,
+                          fs: fs,
                         );
                       },
                     );
@@ -352,15 +393,16 @@ class _ChatPageState extends State<ChatPage> {
                   controller: _messageController,
                   isSending: _isSending,
                   onSend: _sendMessage,
+                  fs: fs,
                 )
               else
                 Container(
                   padding: const EdgeInsets.all(16),
                   child: Text(
-                    'This request has been resolved.',
-                    style: const TextStyle(
-                      color: Color(0xFF6B6B80),
-                      fontSize: 13,
+                    'chat.request_resolved'.tr(),
+                    style: TextStyle(
+                      color: const Color(0xFF6B6B80),
+                      fontSize: fs - 1,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -373,24 +415,36 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _showResolveDialog() {
+    final fs = context.read<AppSettingsProvider>().fontSize;
+
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: _card,
-        title: const Text(
-          'Mark as Resolved',
-          style: TextStyle(color: Color(0xFF1A1A2E)),
+        title: Text(
+          'chat.mark_resolved_title'.tr(),
+          style: TextStyle(
+            color: const Color(0xFF1A1A2E),
+            fontSize: fs + 2,
+            fontWeight: FontWeight.w700,
+          ),
         ),
-        content: const Text(
-          'Has the pilgrim been helped? This will close the chat.',
-          style: TextStyle(color: Color(0xFF6B6B80)),
+        content: Text(
+          'chat.mark_resolved_body'.tr(),
+          style: TextStyle(
+            color: const Color(0xFF6B6B80),
+            fontSize: fs,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: Color(0xFF9999AA)),
+            child: Text(
+              'common.cancel'.tr(),
+              style: TextStyle(
+                color: const Color(0xFF9999AA),
+                fontSize: fs,
+              ),
             ),
           ),
           ElevatedButton(
@@ -399,9 +453,12 @@ class _ChatPageState extends State<ChatPage> {
               Navigator.pop(context);
               _markResolved();
             },
-            child: const Text(
-              'Yes, Resolved',
-              style: TextStyle(color: Colors.white),
+            child: Text(
+              'chat.yes_resolved'.tr(),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: fs,
+              ),
             ),
           ),
         ],
@@ -413,12 +470,14 @@ class _ChatPageState extends State<ChatPage> {
 // =============================================================================
 // MISSION INFO CARD — shown only to the volunteer
 // =============================================================================
+
 class _MissionInfoCard extends StatelessWidget {
   final String type;
   final String description;
   final int priority;
   final String pilgrimName;
   final String language;
+  final String languageLabel;
   final bool needsAmbulance;
   final GeoPoint? location;
   final bool expanded;
@@ -428,6 +487,7 @@ class _MissionInfoCard extends StatelessWidget {
   final IconData typeIcon;
   final String typeLabel;
   final VoidCallback? onOpenMap;
+  final double fs;
 
   const _MissionInfoCard({
     required this.type,
@@ -435,6 +495,7 @@ class _MissionInfoCard extends StatelessWidget {
     required this.priority,
     required this.pilgrimName,
     required this.language,
+    required this.languageLabel,
     required this.needsAmbulance,
     required this.location,
     required this.expanded,
@@ -444,6 +505,7 @@ class _MissionInfoCard extends StatelessWidget {
     required this.typeIcon,
     required this.typeLabel,
     required this.onOpenMap,
+    required this.fs,
   });
 
   static const _card = Color(0xFFFFFFFF);
@@ -457,8 +519,17 @@ class _MissionInfoCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: _card,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 16, offset: Offset(0, 2))],
-        border: Border.all(color: priorityColor.withValues(alpha: 0.45), width: 1.2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0D000000),
+            blurRadius: 16,
+            offset: Offset(0, 2),
+          ),
+        ],
+        border: Border.all(
+          color: priorityColor.withOpacity(0.45),
+          width: 1.2,
+        ),
       ),
       child: Column(
         children: [
@@ -473,10 +544,10 @@ class _MissionInfoCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(7),
                     decoration: BoxDecoration(
-                      color: priorityColor.withValues(alpha: 0.15),
+                      color: priorityColor.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Icon(typeIcon, color: priorityColor, size: 20),
+                    child: Icon(typeIcon, color: priorityColor, size: fs + 6),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -485,19 +556,19 @@ class _MissionInfoCard extends StatelessWidget {
                       children: [
                         Text(
                           typeLabel,
-                          style: const TextStyle(
-                            color: Color(0xFF1A1A2E),
+                          style: TextStyle(
+                            color: const Color(0xFF1A1A2E),
                             fontWeight: FontWeight.w700,
-                            fontSize: 14,
+                            fontSize: fs,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Row(
                           children: [
-                            _Chip(priorityLabel, priorityColor),
+                            _Chip(priorityLabel, priorityColor, fs),
                             if (needsAmbulance) ...[
                               const SizedBox(width: 6),
-                              _Chip('🚑 Ambulance', Colors.red),
+                              _Chip('chat.ambulance'.tr(), Colors.red, fs),
                             ],
                           ],
                         ),
@@ -526,12 +597,13 @@ class _MissionInfoCard extends StatelessWidget {
                   // Description
                   _InfoRow(
                     icon: Icons.description_outlined,
-                    label: 'Description',
+                    label: 'chat.description'.tr(),
+                    fs: fs,
                     child: Text(
                       description.isEmpty ? '—' : description,
                       style: TextStyle(
                         color: const Color(0xFF1A1A2E),
-                        fontSize: 13,
+                        fontSize: fs - 1,
                       ),
                       textDirection: language == 'ar'
                           ? TextDirection.rtl
@@ -543,12 +615,13 @@ class _MissionInfoCard extends StatelessWidget {
                   // Pilgrim name + language
                   _InfoRow(
                     icon: Icons.person_outline,
-                    label: 'Pilgrim',
+                    label: 'chat.pilgrim'.tr(),
+                    fs: fs,
                     child: Text(
-                      '$pilgrimName  •  ${language == 'ar' ? 'Arabic' : 'English'}',
+                      '$pilgrimName  •  $languageLabel',
                       style: TextStyle(
                         color: const Color(0xFF1A1A2E),
-                        fontSize: 13,
+                        fontSize: fs - 1,
                       ),
                     ),
                   ),
@@ -557,7 +630,8 @@ class _MissionInfoCard extends StatelessWidget {
                   // Location
                   _InfoRow(
                     icon: Icons.location_on_outlined,
-                    label: 'Location',
+                    label: 'chat.location'.tr(),
+                    fs: fs,
                     child: location != null
                         ? Container(
                             padding: const EdgeInsets.symmetric(
@@ -565,10 +639,10 @@ class _MissionInfoCard extends StatelessWidget {
                               vertical: 7,
                             ),
                             decoration: BoxDecoration(
-                              color: _accent.withValues(alpha: 0.08),
+                              color: _accent.withOpacity(0.08),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: _accent.withValues(alpha: 0.25),
+                                color: _accent.withOpacity(0.25),
                               ),
                             ),
                             child: Row(
@@ -580,23 +654,25 @@ class _MissionInfoCard extends StatelessWidget {
                                   size: 14,
                                 ),
                                 const SizedBox(width: 6),
-                                Text(
-                                  '${location!.latitude.toStringAsFixed(5)}, '
-                                  '${location!.longitude.toStringAsFixed(5)}',
-                                  style: const TextStyle(
-                                    color: _accent,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
+                                Flexible(
+                                  child: Text(
+                                    '${location!.latitude.toStringAsFixed(5)}, '
+                                    '${location!.longitude.toStringAsFixed(5)}',
+                                    style: TextStyle(
+                                      color: _accent,
+                                      fontSize: fs - 2,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
                           )
-                        : const Text(
-                            'Location not shared',
+                        : Text(
+                            'chat.location_not_shared'.tr(),
                             style: TextStyle(
-                              color: Color(0xFF9999AA),
-                              fontSize: 13,
+                              color: const Color(0xFF9999AA),
+                              fontSize: fs - 1,
                             ),
                           ),
                   ),
@@ -608,22 +684,25 @@ class _MissionInfoCard extends StatelessWidget {
                       onTap: () {
                         Clipboard.setData(
                           ClipboardData(
-                            text:
-                                '${location!.latitude}, ${location!.longitude}',
+                            text: '${location!.latitude}, ${location!.longitude}',
                           ),
                         );
+
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Coordinates copied!'),
-                            duration: Duration(seconds: 2),
+                          SnackBar(
+                            content: Text(
+                              'chat.coordinates_copied'.tr(),
+                              style: TextStyle(fontSize: fs),
+                            ),
+                            duration: const Duration(seconds: 2),
                           ),
                         );
                       },
-                      child: const Text(
-                        'Copy coordinates',
+                      child: Text(
+                        'chat.copy_coordinates'.tr(),
                         style: TextStyle(
-                          color: Color(0xFF9999AA),
-                          fontSize: 11,
+                          color: const Color(0xFF9999AA),
+                          fontSize: fs - 3,
                           decoration: TextDecoration.underline,
                         ),
                       ),
@@ -644,65 +723,81 @@ class _MissionInfoCard extends StatelessWidget {
 class _Chip extends StatelessWidget {
   final String text;
   final Color color;
-  const _Chip(this.text, this.color);
+  final double fs;
+
+  const _Chip(this.text, this.color, this.fs);
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-    decoration: BoxDecoration(
-      color: color.withValues(alpha: 0.15),
-      borderRadius: BorderRadius.circular(6),
-    ),
-    child: Text(
-      text,
-      style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600),
-    ),
-  );
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: fs - 3,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
 }
 
 class _InfoRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final Widget child;
+  final double fs;
+
   const _InfoRow({
     required this.icon,
     required this.label,
     required this.child,
+    required this.fs,
   });
 
   @override
-  Widget build(BuildContext context) => Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Icon(icon, color: const Color(0xFF9999AA), size: 15),
-      const SizedBox(width: 6),
-      Text(
-        '$label: ',
-        style: const TextStyle(
-          color: Color(0xFF9999AA),
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: const Color(0xFF9999AA), size: fs + 1),
+        const SizedBox(width: 6),
+        Text(
+          '$label: ',
+          style: TextStyle(
+            color: const Color(0xFF9999AA),
+            fontSize: fs - 2,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-      ),
-      Expanded(child: child),
-    ],
-  );
+        Expanded(child: child),
+      ],
+    );
+  }
 }
 
 // =============================================================================
 // MESSAGE BUBBLE
 // =============================================================================
+
 class _MessageBubble extends StatefulWidget {
   final String text;
   final String time;
   final bool isMine;
   final String role;
+  final double fs;
 
   const _MessageBubble({
     required this.text,
     required this.time,
     required this.isMine,
     required this.role,
+    required this.fs,
   });
 
   @override
@@ -724,14 +819,31 @@ class _MessageBubbleState extends State<_MessageBubble> {
 
   Future<void> _autoTranslate() async {
     final myLang = context.locale.languageCode;
-    final msgLang = await TranslationService.instance.identifyLanguage(widget.text);
-    if (msgLang == myLang) return;
-    final result = await TranslationService.instance.translate(
-      widget.text,
-      msgLang,
-      myLang,
-    );
-    if (mounted && result != null) setState(() => _translated = result);
+
+    try {
+      final msgLang =
+          await TranslationService.instance.identifyLanguage(widget.text);
+
+      if (msgLang.isEmpty || msgLang == 'und' || msgLang == myLang) return;
+
+      final result = await TranslationService.instance.translate(
+        widget.text,
+        msgLang,
+        myLang,
+      );
+
+      if (mounted && result != null && result.trim().isNotEmpty) {
+        setState(() => _translated = result);
+      }
+    } catch (_) {
+      // Keep original message if translation fails.
+    }
+  }
+
+  String _roleLabel() {
+    if (widget.role == 'volunteer') return 'chat.volunteer'.tr();
+    if (widget.role == 'pilgrim') return 'chat.pilgrim'.tr();
+    return widget.role;
   }
 
   @override
@@ -748,7 +860,15 @@ class _MessageBubbleState extends State<_MessageBubble> {
         ),
         decoration: BoxDecoration(
           color: widget.isMine ? _accent : _card,
-          boxShadow: widget.isMine ? null : const [BoxShadow(color: Color(0x0D000000), blurRadius: 8, offset: Offset(0, 2))],
+          boxShadow: widget.isMine
+              ? null
+              : const [
+                  BoxShadow(
+                    color: Color(0x0D000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -767,10 +887,10 @@ class _MessageBubbleState extends State<_MessageBubble> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 3),
                 child: Text(
-                  widget.role == 'volunteer' ? 'Volunteer' : 'Pilgrim',
+                  _roleLabel(),
                   style: TextStyle(
-                    color: _accent.withValues(alpha: 0.8),
-                    fontSize: 10,
+                    color: _accent.withOpacity(0.8),
+                    fontSize: widget.fs - 4,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -781,7 +901,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
               displayText,
               style: TextStyle(
                 color: widget.isMine ? Colors.white : const Color(0xFF1A1A2E),
-                fontSize: 14,
+                fontSize: widget.fs,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -792,12 +912,14 @@ class _MessageBubbleState extends State<_MessageBubble> {
               GestureDetector(
                 onTap: () => setState(() => _showOriginal = !_showOriginal),
                 child: Text(
-                  _showOriginal ? 'Hide original' : 'See original',
+                  _showOriginal
+                      ? 'chat.hide_original'.tr()
+                      : 'chat.see_original'.tr(),
                   style: TextStyle(
                     color: widget.isMine
-                        ? Colors.white60
+                        ? Colors.white70
                         : const Color(0xFF9999AA),
-                    fontSize: 10,
+                    fontSize: widget.fs - 4,
                     decoration: TextDecoration.underline,
                   ),
                 ),
@@ -809,9 +931,9 @@ class _MessageBubbleState extends State<_MessageBubble> {
                     widget.text,
                     style: TextStyle(
                       color: widget.isMine
-                          ? Colors.white60
+                          ? Colors.white70
                           : const Color(0xFF9999AA),
-                      fontSize: 11,
+                      fontSize: widget.fs - 3,
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -823,9 +945,9 @@ class _MessageBubbleState extends State<_MessageBubble> {
               widget.time,
               style: TextStyle(
                 color: widget.isMine
-                    ? Colors.black.withValues(alpha: 0.55)
-                    : Colors.white.withValues(alpha: 0.4),
-                fontSize: 10,
+                    ? Colors.black.withOpacity(0.55)
+                    : Colors.black.withOpacity(0.45),
+                fontSize: widget.fs - 4,
               ),
             ),
           ],
@@ -838,15 +960,18 @@ class _MessageBubbleState extends State<_MessageBubble> {
 // =============================================================================
 // CHAT INPUT BAR
 // =============================================================================
+
 class _ChatInput extends StatelessWidget {
   final TextEditingController controller;
   final bool isSending;
   final VoidCallback onSend;
+  final double fs;
 
   const _ChatInput({
     required this.controller,
     required this.isSending,
     required this.onSend,
+    required this.fs,
   });
 
   static const _bg = Color(0xFFF7F4EF);
@@ -859,7 +984,9 @@ class _ChatInput extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       decoration: const BoxDecoration(
         color: _bg,
-        border: Border(top: BorderSide(color: Color(0xFFE8E4DE), width: 0.5)),
+        border: Border(
+          top: BorderSide(color: Color(0xFFE8E4DE), width: 0.5),
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -873,12 +1000,18 @@ class _ChatInput extends StatelessWidget {
                 ),
                 child: TextField(
                   controller: controller,
-                  style: const TextStyle(color: Color(0xFF1A1A2E)),
+                  style: TextStyle(
+                    color: const Color(0xFF1A1A2E),
+                    fontSize: fs,
+                  ),
                   minLines: 1,
                   maxLines: 4,
                   decoration: InputDecoration(
-                    hintText: 'Type a message...',
-                    hintStyle: const TextStyle(color: Color(0xFFAAAAAA)),
+                    hintText: 'chat.type_message'.tr(),
+                    hintStyle: TextStyle(
+                      color: const Color(0xFFAAAAAA),
+                      fontSize: fs - 1,
+                    ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 14,
@@ -895,8 +1028,8 @@ class _ChatInput extends StatelessWidget {
               child: Container(
                 width: 48,
                 height: 48,
-                decoration: const BoxDecoration(
-                  color: _accent,
+                decoration: BoxDecoration(
+                  color: isSending ? _accent.withOpacity(0.65) : _accent,
                   shape: BoxShape.circle,
                 ),
                 child: isSending

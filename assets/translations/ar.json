@@ -16,8 +16,7 @@
     "no": "لا",
     "ok": "موافق",
     "select": "اختر",
-    "select_all": "اختر كل ما ينطبق",
-    "coming_soon": "قريباً"
+    "select_all": "اختر كل ما ينطبق"
   },
   "errors": {
     "unexpected": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
@@ -25,7 +24,7 @@
     "auth_generic": "خطأ في المصادقة. يرجى المحاولة مرة أخرى.",
     "load_profile": "خطأ في تحميل الملف الشخصي. يرجى المحاولة مرة أخرى.",
     "save_profile": "خطأ في حفظ الملف الشخصي. يرجى المحاولة مرة أخرى.",
-    "not_logged_in": "يجب تسجيل الدخول للمتابعة.",
+    "not_logged_in": "يجب تسجيل الدخول",
     "submit_application": "فشل في إرسال الطلب: {error}",
     "name_required": "الاسم مطلوب",
     "email_invalid": "يرجى إدخال بريد إلكتروني صحيح",
@@ -40,7 +39,9 @@
     "expertise_required": "يرجى اختيار مجال خبرة واحد على الأقل.",
     "language_required": "يرجى اختيار لغة واحدة على الأقل.",
     "emergency_name_required": "اسم جهة الاتصال في حالات الطوارئ مطلوب",
-    "emergency_phone_required": "رقم الهاتف مطلوب"
+    "emergency_phone_required": "رقم الهاتف مطلوب",
+    "index_required": "يتطلب إنشاء فهرس. تحقق من الكونسول لإنشائه.",
+    "could_not_accept": "تعذر قبول الطلب"
   },
   "role_selection": {
     "greeting": "السلام عليكم",
@@ -65,6 +66,8 @@
     "password": "كلمة المرور",
     "confirm_password": "تأكيد كلمة المرور",
     "already_have_account": "لديك حساب بالفعل؟ سجّل دخولك",
+    "switch_login": "لديك حساب؟ تسجيل الدخول",
+    "switch_signup": "ليس لديك حساب؟ إنشاء حساب",
     "no_account": "ليس لديك حساب؟ أنشئ حساباً",
     "role_hajj": "حاج",
     "role_volunteer": "متطوع"
@@ -72,7 +75,6 @@
   "home": {
     "loading_profile": "جارٍ تحميل ملفك الشخصي...",
     "welcome": "مرحباً، {name}",
-    "sos": "SOS   طلب مساعدة",
     "next_prayer": "الصلاة القادمة",
     "prayer_time_label": "توقيت مكة المكرمة",
     "daily_dua_title": "دعاء اليوم",
@@ -87,8 +89,8 @@
   },
   "nav": {
     "home": "الرئيسية",
-    "prayers": "الصلوات",
     "chatbot": "المساعد",
+    "get_help": "طلب مساعدة",
     "map": "الخريطة",
     "settings": "الإعدادات",
     "requests": "الطلبات",
@@ -243,6 +245,222 @@
     "requests_completed": "طلبات مكتملة",
     "active_requests": "الطلبات النشطة",
     "no_requests": "لا توجد طلبات نشطة",
-    "no_requests_subtitle": "ستظهر هنا طلبات المساعدة من الحجاج"
+    "no_requests_subtitle": "ستظهر هنا طلبات المساعدة من الحجاج",
+    "helping": "يساعد",
+    "available": "متاح",
+    "current_status": "الحالة الحالية",
+    "active_request": "طلب نشط",
+    "incoming_requests": "الطلبات الواردة",
+    "helping_pilgrim": "يقوم بمساعدة حاج",
+    "pilgrim_label": "الحاج",
+    "open_chat": "فتح المحادثة",
+    "waiting_requests": "بانتظار الطلبات",
+    "waiting_subtitle": "سيتم إشعارك عند احتياج أحد الحجاج للمساعدة",
+    "view_all": "عرض جميع الطلبات"
+
+  },
+
+  "languages": {
+    "arabic": "العربية",
+    "english": "الإنجليزية",
+    "urdu": "الأردية",
+    "turkish": "التركية",
+    "indonesian": "الإندونيسية",
+    "malay": "الماليزية",
+    "french": "الفرنسية",
+    "other": "أخرى"
+  },
+  "volunteer_requests": {
+    "title": "الطلبات الواردة",
+    "subtitle": "عرض الطلبات المطابقة لخبرتك",
+    "empty_title": "لا توجد طلبات حالياً",
+    "empty_subtitle": "ستظهر طلبات المساعدة هنا",
+    "decline": "رفض",
+    "accept": "قبول",
+    "active_chats": "محادثاتي النشطة",
+    "no_active": "لا توجد محادثات نشطة",
+    "accept_chat": "قبول وبدء المحادثة",
+    "already_active": "لديك طلب نشط بالفعل. قم بإنهائه قبل قبول طلب جديد.",
+    "ambulance": "إسعاف",
+    "help_request": "طلب مساعدة"
+  },
+  "chat": {
+    "chat_with": "المحادثة مع {name}",
+    "live_status": "نشط",
+    "resolved_status": "تم الحل",
+    "resolve": "إنهاء الطلب",
+    "mark_resolved_title": "إنهاء الطلب",
+    "mark_resolved_body": "هل أنت متأكد أنك تريد إنهاء هذا الطلب؟",
+    "yes_resolved": "نعم، إنهاء",
+    "type_message": "اكتب رسالة...",
+    "failed_send": "فشل الإرسال: {error}",
+    "pilgrim": "حاج",
+    "volunteer": "متطوع",
+    "description": "الوصف",
+    "location": "الموقع",
+    "location_not_shared": "لم يتم مشاركة الموقع",
+    "copy_coordinates": "نسخ الإحداثيات",
+    "coordinates_copied": "تم نسخ الإحداثيات",
+    "empty_volunteer": "ابدأ المحادثة لمساعدة الحاج",
+    "empty_pilgrim": "ابدأ المحادثة لطلب المساعدة",
+    "request_resolved": "تم إنهاء الطلب",
+    "see_original": "عرض النص الأصلي",
+    "hide_original": "إخفاء النص الأصلي",
+    "priority_life_threatening": "خطر على الحياة",
+    "priority_urgent": "عاجل",
+    "priority_moderate": "متوسط",
+    "priority_mild": "خفيف",
+    "priority_low": "منخفض",
+    "ambulance": "إسعاف",
+    "accepted_message": "{name} قبل طلبك وهو في الطريق إليك!",
+    "accept_to_start": "اقبل طلبًا لبدء المحادثة"
+  },
+  "map": {
+    "title": "الخريطة",
+    "live": "مباشر",
+    "offline": "غير متصل",
+    "category_all": "الكل",
+    "category_holy": "المواقع المقدسة",
+    "category_gates": "البوابات",
+    "category_services": "الخدمات",
+    "tap_to_navigate": "اضغط للتوجيه",
+    "navigating": "جارٍ التوجيه...",
+    "finding_route": "جارٍ العثور على أفضل مسار...",
+    "location_error": "⚠️ تعذر الحصول على موقعك. يرجى تفعيل GPS.",
+    "route_error": "⚠️ تعذر العثور على مسار. حاول مرة أخرى.",
+    "crowd_level": "مستوى الازدحام",
+    "safe": "آمن",
+    "medium": "متوسط",
+    "crowded": "مزدحم",
+    "updated": "آخر تحديث {time}",
+    "just_now": "الآن",
+    "seconds_ago": "قبل {seconds} ث",
+    "minutes_ago": "قبل {minutes} د",
+    "crowded_area_ahead": "منطقة مزدحمة أمامك",
+    "status": "الحالة",
+    "meters_away": "على بُعد {distance} متر",
+    "safety_tip": "يفضل الانتظار أو اختيار مسار بديل حفاظاً على سلامتك.",
+    "dismiss": "إغلاق",
+    "show_on_map": "عرض على الخريطة",
+    "best_time_to_visit": "أفضل وقت للزيارة",
+    "got_it": "حسناً",
+    "route_crowded_warning": "المسار يمر عبر منطقة مزدحمة",
+    "distance_meters": "{meters} م",
+    "distance_km": "{km} كم",
+    "duration_minutes": "{minutes} دقيقة",
+    "duration_hours_minutes": "{hours} ساعة {minutes} دقيقة"
+  },
+  "crowd_zones": {
+    "mataf": {
+      "name": "المطاف"
+    },
+    "saee_zone": {
+      "name": "المسعى"
+    },
+    "gate_zone": {
+      "name": "منطقة البوابات"
+    },
+    "outer": {
+      "name": "المنطقة الخارجية"
+    }
+  },
+  "places": {
+    "kaaba": {
+      "name": "الكعبة",
+      "description": "قبلة المسلمين وأقدس موقع في الإسلام"
+    },
+    "saee": {
+      "name": "المسعى",
+      "description": "الممر بين الصفا والمروة"
+    },
+    "mina": {
+      "name": "منى",
+      "description": "منطقة إقامة الحجاج أثناء أيام التشريق"
+    },
+    "arafat": {
+      "name": "عرفات",
+      "description": "مكان الوقوف في يوم عرفة"
+    },
+    "muzdalifah": {
+      "name": "مزدلفة",
+      "description": "منطقة المبيت بعد عرفة"
+    },
+    "jamarat": {
+      "name": "الجمرات",
+      "description": "مكان رمي الجمرات"
+    },
+    "gate_abdulaziz": {
+      "name": "باب الملك عبدالعزيز",
+      "description": "أحد المداخل الرئيسية للحرم"
+    },
+    "gate_fahd": {
+      "name": "باب الملك فهد",
+      "description": "مدخل رئيسي للحرم المكي"
+    },
+    "gate_umrah": {
+      "name": "باب العمرة",
+      "description": "مدخل مخصص للمعتمرين"
+    },
+    "toilets": {
+      "name": "دورات المياه",
+      "description": "مرافق صحية للحجاج"
+    },
+    "police": {
+      "name": "الشرطة",
+      "description": "مركز أمني للمساعدة"
+    },
+    "hospital": {
+      "name": "مستشفى",
+      "description": "خدمات طبية طارئة"
+    },
+    "zamzam": {
+      "name": "ماء زمزم",
+      "description": "موقع توزيع ماء زمزم"
+    }
+  },
+  "sos": {
+    "title": "طلب مساعدة",
+    "speaking_language": "لغة التحدث:",
+    "type_or_speak": "اكتب أو تحدث هنا...",
+    "send_sos": "إرسال طلب استغاثة",
+    "my_requests": "طلباتي",
+    "no_requests_yet": "لا توجد طلبات بعد",
+    "requests_will_appear": "ستظهر طلبات المساعدة هنا",
+    "open_chat": "فتح المحادثة",
+    "speech_not_available": "التعرّف على الصوت غير متاح",
+    "describe_problem": "يرجى وصف مشكلتك",
+    "type_medical": "طبي",
+    "type_navigation": "ملاحة",
+    "type_translation": "ترجمة",
+    "type_general_guidance": "مساعدة عامة",
+    "type_emergency_response": "طوارئ",
+    "type_crowd_management": "إدارة الحشود",
+    "type_general": "عام",
+    "status_pending": "جاري البحث عن متطوع...",
+    "status_assigned": "تم العثور على متطوع، بانتظار الرد...",
+    "status_accepted": "المتطوع في الطريق!",
+    "status_in_progress": "جاري تقديم المساعدة",
+    "status_resolved": "تم الحل",
+    "status_declined": "جاري البحث عن شخص آخر...",
+    "status_cancelled": "تم الإلغاء",
+    "request_sent": "تم إرسال الطلب، النوع: {type}",
+    "volunteer_name": "المتطوع: {name}",
+    "translating": "جارٍ الترجمة...",
+    "listening_ar": "جارٍ الاستماع بالعربية...",
+    "listening_en": "جارٍ الاستماع بالإنجليزية..."
+  },
+  "time": {
+    "just_now": "الآن",
+    "minutes_ago": "قبل {count} دقيقة",
+    "hours_ago": "قبل {count} ساعة",
+    "days_ago": "قبل {count} يوم"
+  },
+  "priority": {
+    "life_threatening": "مهدد للحياة",
+    "urgent": "عاجل",
+    "moderate": "متوسط",
+    "mild": "خفيف",
+    "low": "منخفض",
+    "unknown": "غير معروف"
   }
 }

@@ -2,7 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart';
 
+import 'app_settings_provider.dart';
 import 'map/place.dart';
 import 'map/places_data.dart';
 import 'map/crowd_zone.dart';
@@ -55,6 +58,7 @@ class _MapPageState extends State<MapPage> {
       if (!mounted) return;
       _refreshCrowdData();
     });
+
     _crowdRefreshTimer = Timer.periodic(
       const Duration(seconds: 60), // reduced from 30s to ease emulator load
       (_) => _refreshCrowdData(),
@@ -131,6 +135,8 @@ class _MapPageState extends State<MapPage> {
   }
 
   void _showProximityAlert(CrowdZone zone, double distance) {
+    final fs = context.read<AppSettingsProvider>().fontSize;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -150,10 +156,13 @@ class _MapPageState extends State<MapPage> {
               ),
             ),
             const SizedBox(width: 10),
-            const Expanded(
+            Expanded(
               child: Text(
-                "Crowded Area Ahead",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                'map.crowded_area_ahead'.tr(),
+                style: TextStyle(
+                  fontSize: fs + 4,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -162,14 +171,21 @@ class _MapPageState extends State<MapPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _alertInfoRow(Icons.place, zone.name),
+            _alertInfoRow(Icons.place, zone.translatedName, fs),
             const SizedBox(height: 8),
             _alertInfoRow(
               Icons.people,
-              "Status: ${zone.levelLabel} (${(zone.density * 100).round()}%)",
+              '${'map.status'.tr()}: ${zone.levelLabel} (${(zone.density * 100).round()}%)',
+              fs,
             ),
             const SizedBox(height: 8),
-            _alertInfoRow(Icons.straighten, "${distance.round()} meters away"),
+            _alertInfoRow(
+              Icons.straighten,
+              'map.meters_away'.tr(namedArgs: {
+                'distance': distance.round().toString(),
+              }),
+              fs,
+            ),
             const SizedBox(height: 14),
             Container(
               padding: const EdgeInsets.all(10),
@@ -177,14 +193,21 @@ class _MapPageState extends State<MapPage> {
                 color: Colors.orange.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.lightbulb_outline, color: Colors.orange, size: 18),
-                  SizedBox(width: 8),
+                  const Icon(
+                    Icons.lightbulb_outline,
+                    color: Colors.orange,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      "Consider waiting or taking an alternative route for your safety.",
-                      style: TextStyle(fontSize: 13, color: Colors.black87),
+                      'map.safety_tip'.tr(),
+                      style: TextStyle(
+                        fontSize: fs - 1,
+                        color: Colors.black87,
+                      ),
                     ),
                   ),
                 ],
@@ -195,7 +218,10 @@ class _MapPageState extends State<MapPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Dismiss"),
+            child: Text(
+              'map.dismiss'.tr(),
+              style: TextStyle(fontSize: fs),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -211,19 +237,28 @@ class _MapPageState extends State<MapPage> {
                 CameraUpdate.newLatLngZoom(zone.center, 17),
               );
             },
-            child: const Text("Show on Map"),
+            child: Text(
+              'map.show_on_map'.tr(),
+              style: TextStyle(fontSize: fs),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _alertInfoRow(IconData icon, String text) {
+  Widget _alertInfoRow(IconData icon, String text, double fs) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: Colors.black54),
+        const SizedBox(width: 0),
+        Icon(icon, size: fs + 4, color: Colors.black54),
         const SizedBox(width: 8),
-        Expanded(child: Text(text, style: const TextStyle(fontSize: 14))),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(fontSize: fs, color: Colors.black87),
+          ),
+        ),
       ],
     );
   }
@@ -232,14 +267,17 @@ class _MapPageState extends State<MapPage> {
   Future<Position?> _getCurrentPosition() async {
     // Use cached permission to avoid repeated OS calls every timer tick
     _cachedPermission ??= await Geolocator.checkPermission();
+
     if (_cachedPermission == LocationPermission.denied ||
         _cachedPermission == LocationPermission.deniedForever) {
       _cachedPermission = await Geolocator.requestPermission();
+
       if (_cachedPermission == LocationPermission.denied ||
           _cachedPermission == LocationPermission.deniedForever) {
         return null;
       }
     }
+
     try {
       // getLastKnownPosition is instant — no GPS hardware wait
       final last = await Geolocator.getLastKnownPosition();
@@ -259,6 +297,7 @@ class _MapPageState extends State<MapPage> {
   Future<void> _goToMyLocation() async {
     final position = await _getCurrentPosition();
     if (position == null) return;
+
     mapController?.animateCamera(
       CameraUpdate.newLatLngZoom(
         LatLng(position.latitude, position.longitude),
@@ -278,7 +317,7 @@ class _MapPageState extends State<MapPage> {
 
     final position = await _getCurrentPosition();
     if (position == null) {
-      _showSnack("⚠️ Could not get your location. Please enable GPS.");
+      _showSnack('map.location_error'.tr());
       setState(() => isLoadingRoute = false);
       return;
     }
@@ -290,7 +329,7 @@ class _MapPageState extends State<MapPage> {
     );
 
     if (result == null) {
-      _showSnack("⚠️ Could not find a route. Try again.");
+      _showSnack('map.route_error'.tr());
       setState(() => isLoadingRoute = false);
       return;
     }
@@ -317,6 +356,7 @@ class _MapPageState extends State<MapPage> {
   bool _checkRoutePassesCrowdedZone(List<LatLng> routePoints) {
     for (final zone in crowdZones) {
       if (zone.density < 0.7) continue;
+
       for (final point in routePoints) {
         final distance = Geolocator.distanceBetween(
           point.latitude,
@@ -324,22 +364,29 @@ class _MapPageState extends State<MapPage> {
           zone.center.latitude,
           zone.center.longitude,
         );
+
         if (distance <= zone.radius) return true;
       }
     }
+
     return false;
   }
 
   void _fitCameraToRoute(List<LatLng> points) {
     if (points.isEmpty || mapController == null) return;
-    double minLat = points.first.latitude, maxLat = points.first.latitude;
-    double minLng = points.first.longitude, maxLng = points.first.longitude;
+
+    double minLat = points.first.latitude;
+    double maxLat = points.first.latitude;
+    double minLng = points.first.longitude;
+    double maxLng = points.first.longitude;
+
     for (final p in points) {
       if (p.latitude < minLat) minLat = p.latitude;
       if (p.latitude > maxLat) maxLat = p.latitude;
       if (p.longitude < minLng) minLng = p.longitude;
       if (p.longitude > maxLng) maxLng = p.longitude;
     }
+
     mapController!.animateCamera(
       CameraUpdate.newLatLngBounds(
         LatLngBounds(
@@ -352,14 +399,24 @@ class _MapPageState extends State<MapPage> {
   }
 
   void _showSnack(String message) {
+    final fs = context.read<AppSettingsProvider>().fontSize;
+
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(seconds: 3)),
+      SnackBar(
+        content: Text(
+          message,
+          style: TextStyle(fontSize: fs),
+        ),
+        duration: const Duration(seconds: 3),
+      ),
     );
   }
 
   // ---------- BEST TIME TO VISIT (FR8.5) ----------
   // Shows a bottom sheet with crowd info + suggested best time for a zone
   void _showZoneInfo(CrowdZone zone) {
+    final fs = context.read<AppSettingsProvider>().fontSize;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -400,10 +457,10 @@ class _MapPageState extends State<MapPage> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    zone.name,
-                    style: const TextStyle(
-                      color: Color(0xFF1A1A2E),
-                      fontSize: 18,
+                    zone.translatedName,
+                    style: TextStyle(
+                      color: const Color(0xFF1A1A2E),
+                      fontSize: fs + 4,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -418,10 +475,10 @@ class _MapPageState extends State<MapPage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    "${zone.levelLabel} (${(zone.density * 100).round()}%)",
+                    '${zone.levelLabel} (${(zone.density * 100).round()}%)',
                     style: TextStyle(
                       color: zone.color,
-                      fontSize: 12,
+                      fontSize: fs - 2,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -431,7 +488,6 @@ class _MapPageState extends State<MapPage> {
 
             const SizedBox(height: 16),
 
-            // Best time to visit
             if (zone.bestTime.isNotEmpty) ...[
               Container(
                 width: double.infinity,
@@ -444,15 +500,19 @@ class _MapPageState extends State<MapPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.access_time, color: Colors.green, size: 18),
-                        SizedBox(width: 8),
+                        const Icon(
+                          Icons.access_time,
+                          color: Colors.green,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
                         Text(
-                          "Best Time to Visit",
+                          'map.best_time_to_visit'.tr(),
                           style: TextStyle(
                             color: Colors.green,
-                            fontSize: 14,
+                            fontSize: fs,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -461,9 +521,9 @@ class _MapPageState extends State<MapPage> {
                     const SizedBox(height: 8),
                     Text(
                       zone.bestTime,
-                      style: const TextStyle(
-                        color: Color(0xFF1A1A2E),
-                        fontSize: 16,
+                      style: TextStyle(
+                        color: const Color(0xFF1A1A2E),
+                        fontSize: fs + 2,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -471,9 +531,9 @@ class _MapPageState extends State<MapPage> {
                       const SizedBox(height: 4),
                       Text(
                         zone.bestTimeNote,
-                        style: const TextStyle(
-                          color: Color(0xFF6B6B80),
-                          fontSize: 12,
+                        style: TextStyle(
+                          color: const Color(0xFF6B6B80),
+                          fontSize: fs - 2,
                         ),
                       ),
                     ],
@@ -484,7 +544,6 @@ class _MapPageState extends State<MapPage> {
 
             const SizedBox(height: 16),
 
-            // Action buttons
             Row(
               children: [
                 Expanded(
@@ -504,7 +563,10 @@ class _MapPageState extends State<MapPage> {
                       );
                     },
                     icon: const Icon(Icons.map, size: 18),
-                    label: const Text("Show on Map"),
+                    label: Text(
+                      'map.show_on_map'.tr(),
+                      style: TextStyle(fontSize: fs),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -520,7 +582,10 @@ class _MapPageState extends State<MapPage> {
                     ),
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.check, size: 18),
-                    label: const Text("Got it"),
+                    label: Text(
+                      'map.got_it'.tr(),
+                      style: TextStyle(fontSize: fs),
+                    ),
                   ),
                 ),
               ],
@@ -536,6 +601,7 @@ class _MapPageState extends State<MapPage> {
   Set<Marker> _buildMarkers() {
     return PlacesData.all.map((place) {
       final isSelected = selectedPlace?.id == place.id;
+
       return Marker(
         markerId: MarkerId(place.id),
         position: place.location,
@@ -544,7 +610,10 @@ class _MapPageState extends State<MapPage> {
               ? BitmapDescriptor.hueAzure
               : _markerHueFor(place.category),
         ),
-        infoWindow: InfoWindow(title: place.name, snippet: place.description),
+        infoWindow: InfoWindow(
+          title: place.nameKey.tr(),
+          snippet: place.descriptionKey.tr(),
+        ),
       );
     }).toSet();
   }
@@ -577,6 +646,7 @@ class _MapPageState extends State<MapPage> {
 
   Set<Polyline> _buildPolylines() {
     if (activeRoute == null) return {};
+
     return {
       Polyline(
         polylineId: const PolylineId("route"),
@@ -592,42 +662,44 @@ class _MapPageState extends State<MapPage> {
   // ---------- BUILD ----------
   @override
   Widget build(BuildContext context) {
+    final fs = context.watch<AppSettingsProvider>().fontSize;
+
     return Scaffold(
       backgroundColor: backgroundColor,
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
-            _buildCategoryTabs(),
-            _buildPlaceList(),
-            Expanded(child: _buildMap()),
+            _buildHeader(fs),
+            _buildCategoryTabs(fs),
+            _buildPlaceList(fs),
+            Expanded(child: _buildMap(fs)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(double fs) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: Row(
         children: [
-          const Text(
-            "Map",
+          Text(
+            'map.title'.tr(),
             style: TextStyle(
-              color: Color(0xFF1A1A2E),
-              fontSize: 22,
+              color: const Color(0xFF1A1A2E),
+              fontSize: fs + 8,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(width: 10),
-          _buildLiveIndicator(),
+          _buildLiveIndicator(fs),
         ],
       ),
     );
   }
 
-  Widget _buildLiveIndicator() {
+  Widget _buildLiveIndicator(double fs) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -653,10 +725,10 @@ class _MapPageState extends State<MapPage> {
           ),
           const SizedBox(width: 6),
           Text(
-            _crowdLive ? "LIVE" : "OFFLINE",
+            _crowdLive ? 'map.live'.tr() : 'map.offline'.tr(),
             style: TextStyle(
               color: _crowdLive ? Colors.greenAccent : Colors.grey,
-              fontSize: 10,
+              fontSize: fs - 4,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -665,7 +737,7 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
-  Widget _buildMap() {
+  Widget _buildMap(double fs) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ClipRRect(
@@ -694,6 +766,7 @@ class _MapPageState extends State<MapPage> {
                     zone.center.latitude,
                     zone.center.longitude,
                   );
+
                   if (distance <= zone.radius) {
                     _showZoneInfo(zone);
                     return;
@@ -750,7 +823,7 @@ class _MapPageState extends State<MapPage> {
 
             // Crowd legend (bottom left, only when no active route)
             if (activeRoute == null && !isLoadingRoute)
-              Positioned(bottom: 12, left: 12, child: _buildCrowdLegend()),
+              Positioned(bottom: 12, left: 12, child: _buildCrowdLegend(fs)),
 
             // My location (bottom right)
             Positioned(
@@ -768,15 +841,18 @@ class _MapPageState extends State<MapPage> {
             if (isLoadingRoute)
               Container(
                 color: Colors.black.withOpacity(0.3),
-                child: const Center(
+                child: Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircularProgressIndicator(color: accentColor),
-                      SizedBox(height: 12),
+                      const CircularProgressIndicator(color: accentColor),
+                      const SizedBox(height: 12),
                       Text(
-                        "Finding the best route...",
-                        style: TextStyle(color: Color(0xFF1A1A2E), fontSize: 14),
+                        'map.finding_route'.tr(),
+                        style: TextStyle(
+                          color: const Color(0xFF1A1A2E),
+                          fontSize: fs,
+                        ),
                       ),
                     ],
                   ),
@@ -789,7 +865,7 @@ class _MapPageState extends State<MapPage> {
                 top: 12,
                 left: 70,
                 right: 70,
-                child: _buildRouteInfoCard(),
+                child: _buildRouteInfoCard(fs),
               ),
           ],
         ),
@@ -797,7 +873,7 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
-  Widget _buildRouteInfoCard() {
+  Widget _buildRouteInfoCard(double fs) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
@@ -817,10 +893,10 @@ class _MapPageState extends State<MapPage> {
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  selectedPlace!.name,
-                  style: const TextStyle(
+                  selectedPlace!.nameKey.tr(),
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                    fontSize: fs,
                     color: Colors.black,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -841,9 +917,11 @@ class _MapPageState extends State<MapPage> {
                 color: Colors.black87,
               ),
               const SizedBox(width: 4),
-              Text(
-                "${activeRoute!.distanceText}  •  ${activeRoute!.durationText}",
-                style: const TextStyle(fontSize: 13, color: Colors.black87),
+              Flexible(
+                child: Text(
+                  "${activeRoute!.distanceText}  •  ${activeRoute!.durationText}",
+                  style: TextStyle(fontSize: fs - 1, color: Colors.black87),
+                ),
               ),
             ],
           ),
@@ -855,15 +933,15 @@ class _MapPageState extends State<MapPage> {
                 color: Colors.red.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.warning_amber, size: 14, color: Colors.red),
-                  SizedBox(width: 4),
+                  const Icon(Icons.warning_amber, size: 14, color: Colors.red),
+                  const SizedBox(width: 4),
                   Flexible(
                     child: Text(
-                      "Path goes through a crowded area",
-                      style: TextStyle(fontSize: 11, color: Colors.red),
+                      'map.route_crowded_warning'.tr(),
+                      style: TextStyle(fontSize: fs - 3, color: Colors.red),
                     ),
                   ),
                 ],
@@ -875,7 +953,7 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
-  Widget _buildCrowdLegend() {
+  Widget _buildCrowdLegend(double fs) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
@@ -889,23 +967,25 @@ class _MapPageState extends State<MapPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            "Crowd Level",
+          Text(
+            'map.crowd_level'.tr(),
             style: TextStyle(
-              fontSize: 12,
+              fontSize: fs - 2,
               fontWeight: FontWeight.bold,
               color: Colors.black,
             ),
           ),
           const SizedBox(height: 4),
-          const _LegendRow(color: Colors.green, label: "Safe"),
-          const _LegendRow(color: Colors.orange, label: "Medium"),
-          const _LegendRow(color: Colors.red, label: "Crowded"),
+          _LegendRow(color: Colors.green, label: 'map.safe'.tr(), fs: fs),
+          _LegendRow(color: Colors.orange, label: 'map.medium'.tr(), fs: fs),
+          _LegendRow(color: Colors.red, label: 'map.crowded'.tr(), fs: fs),
           if (_lastCrowdUpdate != null) ...[
             const SizedBox(height: 4),
             Text(
-              "Updated ${_timeAgoText(_lastCrowdUpdate!)}",
-              style: const TextStyle(fontSize: 9, color: Colors.black54),
+              'map.updated'.tr(namedArgs: {
+                'time': _timeAgoText(_lastCrowdUpdate!),
+              }),
+              style: TextStyle(fontSize: fs - 5, color: Colors.black54),
             ),
           ],
         ],
@@ -915,9 +995,15 @@ class _MapPageState extends State<MapPage> {
 
   String _timeAgoText(DateTime time) {
     final seconds = DateTime.now().difference(time).inSeconds;
-    if (seconds < 5) return "just now";
-    if (seconds < 60) return "${seconds}s ago";
-    return "${seconds ~/ 60}m ago";
+
+    if (seconds < 5) return 'map.just_now'.tr();
+    if (seconds < 60) {
+      return 'map.seconds_ago'.tr(namedArgs: {'seconds': seconds.toString()});
+    }
+
+    return 'map.minutes_ago'.tr(namedArgs: {
+      'minutes': (seconds ~/ 60).toString(),
+    });
   }
 
   Widget _circleButton({
@@ -938,12 +1024,20 @@ class _MapPageState extends State<MapPage> {
   }
 
   // ---------- CATEGORY TABS ----------
-  Widget _buildCategoryTabs() {
+  Widget _buildCategoryTabs(double fs) {
     final categories = [
-      {"id": "all", "label": "All", "icon": Icons.apps},
-      {"id": "holy", "label": "Holy Sites", "icon": Icons.mosque},
-      {"id": "gate", "label": "Gates", "icon": Icons.door_front_door},
-      {"id": "service", "label": "Services", "icon": Icons.medical_services},
+      {"id": "all", "label": 'map.category_all'.tr(), "icon": Icons.apps},
+      {"id": "holy", "label": 'map.category_holy'.tr(), "icon": Icons.mosque},
+      {
+        "id": "gate",
+        "label": 'map.category_gates'.tr(),
+        "icon": Icons.door_front_door
+      },
+      {
+        "id": "service",
+        "label": 'map.category_services'.tr(),
+        "icon": Icons.medical_services
+      },
     ];
 
     return Padding(
@@ -957,6 +1051,7 @@ class _MapPageState extends State<MapPage> {
           itemBuilder: (context, index) {
             final cat = categories[index];
             final isActive = _selectedCategory == cat["id"];
+
             return GestureDetector(
               onTap: () =>
                   setState(() => _selectedCategory = cat["id"] as String),
@@ -973,16 +1068,17 @@ class _MapPageState extends State<MapPage> {
                   children: [
                     Icon(
                       cat["icon"] as IconData,
-                      size: 16,
+                      size: fs + 2,
                       color: isActive ? Colors.white : const Color(0xFF6B6B80),
                     ),
                     const SizedBox(width: 6),
                     Text(
                       cat["label"] as String,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: fs - 2,
                         fontWeight: FontWeight.bold,
-                        color: isActive ? Colors.white : const Color(0xFF6B6B80),
+                        color:
+                            isActive ? Colors.white : const Color(0xFF6B6B80),
                       ),
                     ),
                   ],
@@ -996,7 +1092,7 @@ class _MapPageState extends State<MapPage> {
   }
 
   // ---------- PLACE LIST (filtered by category) ----------
-  Widget _buildPlaceList() {
+  Widget _buildPlaceList(double fs) {
     // Filter places by selected category
     final places = _selectedCategory == "all"
         ? PlacesData.all
@@ -1013,14 +1109,15 @@ class _MapPageState extends State<MapPage> {
           itemBuilder: (context, index) {
             final place = places[index];
             final isSelected = selectedPlace?.id == place.id;
-            return _placeCard(place, isSelected);
+
+            return _placeCard(place, isSelected, fs);
           },
         ),
       ),
     );
   }
 
-  Widget _placeCard(Place place, bool isSelected) {
+  Widget _placeCard(Place place, bool isSelected, double fs) {
     return GestureDetector(
       onTap: () => _navigateTo(place),
       child: Container(
@@ -1028,14 +1125,16 @@ class _MapPageState extends State<MapPage> {
         decoration: BoxDecoration(
           color: isSelected ? accentColor : const Color(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isSelected ? accentColor : const Color(0xFFE0DBD3)),
+          border: Border.all(
+            color: isSelected ? accentColor : const Color(0xFFE0DBD3),
+          ),
         ),
         child: Row(
           children: [
             Icon(
               _iconFor(place),
               color: isSelected ? Colors.white : const Color(0xFF1A1A2E),
-              size: 20,
+              size: fs + 6,
             ),
             const SizedBox(width: 8),
             Column(
@@ -1043,18 +1142,21 @@ class _MapPageState extends State<MapPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  place.name,
+                  place.nameKey.tr(),
                   style: TextStyle(
                     color: isSelected ? Colors.white : const Color(0xFF1A1A2E),
                     fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                    fontSize: fs - 2,
                   ),
                 ),
                 Text(
-                  isSelected ? "Navigating..." : "Tap to navigate",
+                  isSelected
+                      ? 'map.navigating'.tr()
+                      : 'map.tap_to_navigate'.tr(),
                   style: TextStyle(
-                    color: isSelected ? Colors.white70 : const Color(0xFF9999AA),
-                    fontSize: 10,
+                    color:
+                        isSelected ? Colors.white70 : const Color(0xFF9999AA),
+                    fontSize: fs - 4,
                   ),
                 ),
               ],
@@ -1098,8 +1200,13 @@ class _MapPageState extends State<MapPage> {
 class _LegendRow extends StatelessWidget {
   final Color color;
   final String label;
+  final double fs;
 
-  const _LegendRow({required this.color, required this.label});
+  const _LegendRow({
+    required this.color,
+    required this.label,
+    required this.fs,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1116,7 +1223,7 @@ class _LegendRow extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: const TextStyle(fontSize: 11, color: Colors.black),
+            style: TextStyle(fontSize: fs - 3, color: Colors.black),
           ),
         ],
       ),

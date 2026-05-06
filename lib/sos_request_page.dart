@@ -13,6 +13,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:easy_localization/easy_localization.dart' hide TextDirection;
+import 'package:provider/provider.dart';
+
+import 'app_settings_provider.dart';
 
 import 'services/sos_classification_service.dart';
 import 'services/translation_service.dart';
@@ -115,7 +118,7 @@ class _SOSRequestPageState extends State<SOSRequestPage>
     }
 
     if (!_speechAvailable) {
-      setState(() => _errorMessage = 'Speech recognition not available');
+      setState(() => _errorMessage = 'sos.speech_not_available'.tr());
       return;
     }
 
@@ -203,7 +206,7 @@ class _SOSRequestPageState extends State<SOSRequestPage>
 
     final text = _textController.text.trim();
     if (text.isEmpty) {
-      setState(() => _errorMessage = 'Please describe your problem');
+      setState(() => _errorMessage = 'sos.describe_problem'.tr());
       return;
     }
 
@@ -222,11 +225,11 @@ class _SOSRequestPageState extends State<SOSRequestPage>
 
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
-        setState(() => _errorMessage = 'You must be logged in');
+        setState(() => _errorMessage = 'errors.not_logged_in'.tr());
         return;
       }
 
-      String pilgrimName = 'Pilgrim';
+      String pilgrimName = 'chat.pilgrim'.tr();
       try {
         final userDoc = await FirebaseFirestore.instance
             .collection('users')
@@ -237,7 +240,7 @@ class _SOSRequestPageState extends State<SOSRequestPage>
           pilgrimName =
               userDoc.data()?['name'] as String? ??
               user.email?.split('@').first ??
-              'Pilgrim';
+              'chat.pilgrim'.tr();
         }
       } catch (_) {}
 
@@ -274,10 +277,12 @@ class _SOSRequestPageState extends State<SOSRequestPage>
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  _appIsArabic
-                      ? 'تم إرسال الطلب، النوع: ${_typeLabel(classification['request_type'])}'
-                      : 'Request sent! Type: ${_typeLabel(classification['request_type'])}',
-                  style: const TextStyle(
+                  'sos.request_sent'.tr(
+                    namedArgs: {
+                      'type': _typeLabel(classification['request_type'] as String?),
+                    },
+                  ),
+                  style: TextStyle(
                     color: Colors.black,
                     fontWeight: FontWeight.w600,
                   ),
@@ -290,7 +295,7 @@ class _SOSRequestPageState extends State<SOSRequestPage>
         ),
       );
     } catch (e) {
-      setState(() => _errorMessage = 'Error: $e');
+      setState(() => _errorMessage = '${'common.error'.tr()}: $e');
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -314,15 +319,24 @@ class _SOSRequestPageState extends State<SOSRequestPage>
   }
 
   String _typeLabel(String? type) {
-    const labels = {
-      'medical': 'Medical',
-      'navigation': 'Navigation',
-      'translation': 'Translation',
-      'general_guidance': 'General Help',
-      'emergency_response': 'Emergency',
-      'crowd_management': 'Crowd Safety',
-    };
-    return labels[type] ?? type ?? 'General';
+    if (type == null || type.isEmpty) return 'sos.type_general'.tr();
+
+    switch (type) {
+      case 'medical':
+        return 'sos.type_medical'.tr();
+      case 'navigation':
+        return 'sos.type_navigation'.tr();
+      case 'translation':
+        return 'sos.type_translation'.tr();
+      case 'general_guidance':
+        return 'sos.type_general_guidance'.tr();
+      case 'emergency_response':
+        return 'sos.type_emergency_response'.tr();
+      case 'crowd_management':
+        return 'sos.type_crowd_management'.tr();
+      default:
+        return type;
+    }
   }
 
   Color _statusColor(String status) {
@@ -347,42 +361,21 @@ class _SOSRequestPageState extends State<SOSRequestPage>
   }
 
   String _statusLabel(String status) {
-    if (_appIsArabic) {
-      switch (status) {
-        case 'pending':
-          return 'جاري البحث عن متطوع...';
-        case 'assigned':
-          return 'تم العثور على متطوع، بانتظار الرد...';
-        case 'accepted':
-          return 'المتطوع في الطريق!';
-        case 'in_progress':
-          return 'جاري تقديم المساعدة';
-        case 'resolved':
-          return 'تم الحل';
-        case 'declined':
-          return 'جاري البحث عن شخص آخر...';
-        case 'cancelled':
-          return 'تم الإلغاء';
-        default:
-          return status;
-      }
-    }
-
     switch (status) {
       case 'pending':
-        return 'Looking for volunteer...';
+        return 'sos.status_pending'.tr();
       case 'assigned':
-        return 'Volunteer found, waiting...';
+        return 'sos.status_assigned'.tr();
       case 'accepted':
-        return 'Volunteer on the way!';
+        return 'sos.status_accepted'.tr();
       case 'in_progress':
-        return 'Help in progress';
+        return 'sos.status_in_progress'.tr();
       case 'resolved':
-        return 'Resolved';
+        return 'sos.status_resolved'.tr();
       case 'declined':
-        return 'Finding another...';
+        return 'sos.status_declined'.tr();
       case 'cancelled':
-        return 'Cancelled';
+        return 'sos.status_cancelled'.tr();
       default:
         return status;
     }
@@ -406,11 +399,12 @@ class _SOSRequestPageState extends State<SOSRequestPage>
   }
 
   Widget _speechLanguageButton({
-    required String label,
-    required String value,
-    required Color accent,
-    required Color cardColor,
-  }) {
+  required String label,
+  required String value,
+  required Color accent,
+  required Color cardColor,
+  required double fs,
+})  {
     final isSelected = _speechInputLanguage == value;
 
     return GestureDetector(
@@ -438,7 +432,7 @@ class _SOSRequestPageState extends State<SOSRequestPage>
             style: TextStyle(
               color: isSelected ? Colors.white : const Color(0xFF1A1A2E),
               fontWeight: FontWeight.w600,
-              fontSize: 14,
+              fontSize: fs,
             ),
           ),
         ),
@@ -453,6 +447,7 @@ class _SOSRequestPageState extends State<SOSRequestPage>
     const accent = Color(0xFFC9973A);
 
     final currentUser = FirebaseAuth.instance.currentUser;
+    final fs = context.watch<AppSettingsProvider>().fontSize;
 
     return Scaffold(
       backgroundColor: background,
@@ -468,10 +463,11 @@ class _SOSRequestPageState extends State<SOSRequestPage>
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          _appIsArabic ? 'طلب مساعدة' : 'Request Help',
-          style: const TextStyle(
+          'sos.title'.tr(),
+          style: TextStyle(
             color: Color(0xFF1A1A2E),
             fontWeight: FontWeight.w600,
+            fontSize: fs + 2,
           ),
         ),
         centerTitle: true,
@@ -502,28 +498,28 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                             Padding(
                               padding: const EdgeInsets.only(top: 2),
                               child: Text(
-                                _appIsArabic
-                                    ? 'لغة التحدث:'
-                                    : 'Speaking language:',
+                                'sos.speaking_language'.tr(),
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Color(0xFF6B6B80),
-                                  fontSize: 16,
+                                  fontSize: fs + 2,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),
                             _speechLanguageButton(
-                              label: _appIsArabic ? 'العربية' : 'Arabic',
+                              label: 'languages.arabic'.tr(),
                               value: 'ar',
                               accent: accent,
                               cardColor: cardColor,
+                              fs: fs,
                             ),
                             _speechLanguageButton(
-                              label: _appIsArabic ? 'الإنجليزية' : 'English',
+                              label: 'languages.english'.tr(),
                               value: 'en',
                               accent: accent,
                               cardColor: cardColor,
+                              fs: fs,
                             ),
                           ],
                         ),
@@ -557,17 +553,15 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                                 : ui.TextDirection.ltr,
                             onEditingComplete: _translateCurrentText,
                             onSubmitted: (_) => _translateCurrentText(),
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Color(0xFF1A1A2E),
-                              fontSize: 15,
+                              fontSize: fs + 1,
                             ),
                             decoration: InputDecoration(
-                              hintText: _appIsArabic
-                                  ? 'اكتب أو تحدث هنا...'
-                                  : 'Type or speak here...',
-                              hintStyle: const TextStyle(
+                              hintText: 'sos.type_or_speak'.tr(),
+                              hintStyle: TextStyle(
                                 color: Color(0xFFAAAAAA),
-                                fontSize: 14,
+                                fontSize: fs,
                               ),
                               border: InputBorder.none,
                               isDense: true,
@@ -584,9 +578,9 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                           padding: const EdgeInsets.only(bottom: 8),
                           child: Text(
                             _errorMessage!,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.red,
-                              fontSize: 12,
+                              fontSize: fs - 2,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -610,19 +604,13 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                               Flexible(
                                 child: Text(
                                   _isTranslating
-                                      ? (_appIsArabic
-                                            ? 'جاري الترجمة...'
-                                            : 'Translating...')
+                                      ? 'sos.translating'.tr()
                                       : (_speechInputLanguage == 'ar'
-                                            ? (_appIsArabic
-                                                  ? 'جاري الاستماع بالعربية...'
-                                                  : 'Listening in Arabic...')
-                                            : (_appIsArabic
-                                                  ? 'جاري الاستماع بالإنجليزية...'
-                                                  : 'Listening in English...')),
+                                            ? 'sos.listening_ar'.tr()
+                                            : 'sos.listening_en'.tr()),
                                   style: TextStyle(
                                     color: _isTranslating ? accent : Colors.red,
-                                    fontSize: 13,
+                                    fontSize: fs - 1,
                                   ),
                                   textAlign: TextAlign.center,
                                 ),
@@ -699,12 +687,10 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                                               ),
                                               const SizedBox(width: 6),
                                               Text(
-                                                _appIsArabic
-                                                    ? 'إرسال طلب استغاثة'
-                                                    : 'Send SOS Request',
-                                                style: const TextStyle(
+                                                'sos.send_sos'.tr(),
+                                                style: TextStyle(
                                                   color: Colors.white,
-                                                  fontSize: 15,
+                                                  fontSize: fs + 1,
                                                   fontWeight: FontWeight.bold,
                                                 ),
                                               ),
@@ -728,10 +714,10 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             child: Text(
-                              _appIsArabic ? 'طلباتي' : 'My Requests',
-                              style: const TextStyle(
+                              'sos.my_requests'.tr(),
+                              style: TextStyle(
                                 color: Color(0xFF9999AA),
-                                fontSize: 13,
+                                fontSize: fs - 1,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -749,11 +735,10 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                         child: currentUser == null
                             ? Center(
                                 child: Text(
-                                  _appIsArabic
-                                      ? 'الرجاء تسجيل الدخول'
-                                      : 'Please log in',
-                                  style: const TextStyle(
+                                  'errors.not_logged_in'.tr(),
+                                  style: TextStyle(
                                     color: Color(0xFF6B6B80),
+                                    fontSize: fs,
                                   ),
                                 ),
                               )
@@ -790,22 +775,18 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                                           ),
                                           const SizedBox(height: 12),
                                           Text(
-                                            _appIsArabic
-                                                ? 'لا توجد طلبات بعد'
-                                                : 'No requests yet',
-                                            style: const TextStyle(
+                                            'sos.no_requests_yet'.tr(),
+                                            style: TextStyle(
                                               color: Color(0xFF6B6B80),
-                                              fontSize: 14,
+                                              fontSize: fs,
                                             ),
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            _appIsArabic
-                                                ? 'ستظهر طلبات المساعدة هنا'
-                                                : 'Your help requests will appear here',
-                                            style: const TextStyle(
+                                            'sos.requests_will_appear'.tr(),
+                                            style: TextStyle(
                                               color: Color(0xFF9999AA),
-                                              fontSize: 12,
+                                              fontSize: fs - 2,
                                             ),
                                           ),
                                         ],
@@ -892,11 +873,11 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                                                     children: [
                                                       Text(
                                                         _typeLabel(type),
-                                                        style: const TextStyle(
+                                                        style: TextStyle(
                                                           color: Color(
                                                             0xFF1A1A2E,
                                                           ),
-                                                          fontSize: 14,
+                                                          fontSize: fs,
                                                           fontWeight:
                                                               FontWeight.w600,
                                                         ),
@@ -907,11 +888,11 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                                                         maxLines: 1,
                                                         overflow: TextOverflow
                                                             .ellipsis,
-                                                        style: const TextStyle(
+                                                        style: TextStyle(
                                                           color: Color(
                                                             0xFF9999AA,
                                                           ),
-                                                          fontSize: 14,
+                                                          fontSize: fs,
                                                         ),
                                                       ),
                                                     ],
@@ -919,9 +900,9 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                                                 ),
                                                 Text(
                                                   timeStr,
-                                                  style: const TextStyle(
+                                                  style: TextStyle(
                                                     color: Color(0xFF9999AA),
-                                                    fontSize: 11,
+                                                    fontSize: fs - 3,
                                                   ),
                                                 ),
                                               ],
@@ -968,7 +949,7 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                                                           color: _statusColor(
                                                             status,
                                                           ),
-                                                          fontSize: 11,
+                                                          fontSize: fs - 3,
                                                           fontWeight:
                                                               FontWeight.w600,
                                                         ),
@@ -1031,15 +1012,13 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                                                             width: 5,
                                                           ),
                                                           Text(
-                                                            _appIsArabic
-                                                                ? 'فتح المحادثة'
-                                                                : 'Open Chat',
+                                                            'sos.open_chat'.tr(),
                                                             style:
-                                                                const TextStyle(
+                                                                TextStyle(
                                                                   color: Color(
                                                                     0xFFC9973A,
                                                                   ),
-                                                                  fontSize: 11,
+                                                                  fontSize: fs - 3,
                                                                   fontWeight:
                                                                       FontWeight
                                                                           .w600,
@@ -1054,16 +1033,18 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                                                     status != 'in_progress')
                                                   Flexible(
                                                     child: Text(
-                                                      _appIsArabic
-                                                          ? 'المتطوع: $volunteerName'
-                                                          : 'Volunteer: $volunteerName',
+                                                      'sos.volunteer_name'.tr(
+                                                        namedArgs: {
+                                                          'name': volunteerName,
+                                                        },
+                                                      ),
                                                       overflow:
                                                           TextOverflow.ellipsis,
-                                                      style: const TextStyle(
+                                                      style: TextStyle(
                                                         color: Color(
                                                           0xFF9999AA,
                                                         ),
-                                                        fontSize: 11,
+                                                        fontSize: fs - 3,
                                                       ),
                                                     ),
                                                   ),
@@ -1091,12 +1072,10 @@ class _SOSRequestPageState extends State<SOSRequestPage>
                                                             ),
                                                       ),
                                                       child: Text(
-                                                        _appIsArabic
-                                                            ? 'إلغاء'
-                                                            : 'Cancel',
-                                                        style: const TextStyle(
+                                                        'common.cancel'.tr(),
+                                                        style: TextStyle(
                                                           color: Colors.red,
-                                                          fontSize: 11,
+                                                          fontSize: fs - 3,
                                                         ),
                                                       ),
                                                     ),

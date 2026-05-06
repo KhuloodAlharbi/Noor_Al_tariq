@@ -14,7 +14,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart';
 
+import 'app_settings_provider.dart';
 import 'pending_approval_page.dart';
 
 class VolunteerApplicationPage extends StatefulWidget {
@@ -48,14 +51,14 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
 
   // Language selections
   final Map<String, bool> _languages = {
-    'Arabic': false,
-    'English': false,
-    'Urdu': false,
-    'Turkish': false,
-    'Indonesian': false,
-    'Malay': false,
-    'French': false,
-    'Other': false,
+    'arabic': false,
+    'english': false,
+    'urdu': false,
+    'turkish': false,
+    'indonesian': false,
+    'malay': false,
+    'french': false,
+    'other': false,
   };
 
   bool _isSubmitting = false;
@@ -81,35 +84,35 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
   Future<void> _loadUserData() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      // User not authenticated - this shouldn't happen, but handle it
-      Navigator.pop(context);
+      if (mounted) Navigator.pop(context);
       return;
     }
 
     _userEmail = user.email;
 
-    // Try to get existing name from Firestore
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .get();
+    try {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
 
-    if (userDoc.exists) {
-      final data = userDoc.data();
-      final name = data?['name'] as String?;
-      if (name != null && name.isNotEmpty) {
-        _fullNameController.text = name;
+      if (userDoc.exists) {
+        final data = userDoc.data();
+        final name = data?['name'] as String?;
+        if (name != null && name.isNotEmpty) {
+          _fullNameController.text = name;
+        }
       }
+    } catch (e) {
+      debugPrint('Error loading user data: $e');
     }
 
     if (mounted) setState(() {});
   }
 
-  // Submit the volunteer application
   Future<void> _submitApplication() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Validate selections
     final selectedExpertise = _expertise.entries
         .where((e) => e.value)
         .map((e) => e.key)
@@ -122,14 +125,14 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
 
     if (selectedExpertise.isEmpty) {
       setState(() {
-        _error = 'Please select at least one area of expertise.';
+        _error = 'errors.expertise_required'.tr();
       });
       return;
     }
 
     if (selectedLanguages.isEmpty) {
       setState(() {
-        _error = 'Please select at least one language.';
+        _error = 'errors.language_required'.tr();
       });
       return;
     }
@@ -137,7 +140,7 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       setState(() {
-        _error = 'You must be logged in to submit an application.';
+        _error = 'errors.not_logged_in'.tr();
       });
       return;
     }
@@ -162,7 +165,7 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
         'languages': selectedLanguages,
         'availabilityStatus': _availability,
         'motivation': _motivationController.text.trim(),
-        'status': 'pending', // pending | approved | declined
+        'status': 'pending',// pending | approved | declined
         'createdAt': FieldValue.serverTimestamp(),
         'reviewedAt': null,
         'reviewedBy': null,
@@ -180,10 +183,8 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Your application has been submitted successfully!',
-          ),
+        SnackBar(
+          content: Text('volunteer_application.submitted'.tr()),
           backgroundColor: Colors.green,
         ),
       );
@@ -197,7 +198,7 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
       );
     } catch (e) {
       setState(() {
-        _error = 'Failed to submit application: $e';
+        _error = 'errors.submit_application'.tr(namedArgs: {'error': '$e'});
       });
     } finally {
       if (mounted) {
@@ -208,38 +209,68 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
     }
   }
 
+  String _expertiseLabel(String key) {
+    return 'volunteer_application.expertise.$key'.tr();
+  }
+
+  String _languageLabel(String key) {
+    return 'languages.$key'.tr();
+  }
+
+  String _availabilityLabel(String value) {
+    return 'volunteer_application.availability_$value'.tr();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final fs = context.watch<AppSettingsProvider>().fontSize;
+
     final accent = Theme.of(context).colorScheme.primary;
     final cardColor = Theme.of(context).colorScheme.surface;
     final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final secondaryTextColor = Theme.of(context).brightness == Brightness.dark
+        ? Colors.white.withOpacity(0.7)
+        : Colors.black.withOpacity(0.6);
 
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text('Volunteer Application'),
+        title: Text(
+          'volunteer_application.title'.tr(),
+          style: TextStyle(fontSize: fs + 2),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () async {
-            // Sign out and go back since they're canceling the application
             final shouldLeave = await showDialog<bool>(
               context: context,
               builder: (context) => AlertDialog(
                 backgroundColor: cardColor,
-                title: const Text('Cancel Application?'),
-                content: const Text(
-                  'If you leave now, you\'ll need to complete this application later to access volunteer features.',
+                title: Text(
+                  'volunteer_application.cancel_title'.tr(),
+                  style: TextStyle(fontSize: fs + 2),
+                ),
+                content: Text(
+                  'volunteer_application.cancel_body'.tr(),
+                  style: TextStyle(fontSize: fs),
                 ),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context, false),
-                    child: const Text('Stay'),
+                    child: Text(
+                      'common.stay'.tr(),
+                      style: TextStyle(fontSize: fs),
+                    ),
                   ),
                   TextButton(
                     onPressed: () => Navigator.pop(context, true),
-                    child: const Text(
-                      'Leave',
-                      style: TextStyle(color: Colors.red),
+                    child: Text(
+                      'common.leave'.tr(),
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: fs,
+                      ),
                     ),
                   ),
                 ],
@@ -248,7 +279,7 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
 
             if (shouldLeave == true && mounted) {
               await FirebaseAuth.instance.signOut();
-              Navigator.pop(context);
+              if (mounted) Navigator.pop(context);
             }
           },
         ),
@@ -260,7 +291,6 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
             constraints: const BoxConstraints(maxWidth: 600),
             child: Column(
               children: [
-                // Header card
                 Card(
                   color: cardColor,
                   shape: RoundedRectangleBorder(
@@ -276,20 +306,22 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
                           color: accent,
                         ),
                         const SizedBox(height: 12),
-                        const Text(
-                          'Complete Your Application',
+                        Text(
+                          'volunteer_application.header_title'.tr(),
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 22,
+                            fontSize: fs + 6,
                             fontWeight: FontWeight.bold,
+                            color: onSurface,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Please provide the following information to apply as a volunteer. Your application will be reviewed by our admin team.',
+                          'volunteer_application.header_subtitle'.tr(),
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.7),
-                            fontSize: 14,
+                            color: secondaryTextColor,
+                            fontSize: fs,
                           ),
                         ),
                         if (_userEmail != null) ...[
@@ -308,15 +340,19 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
                               children: [
                                 Icon(
                                   Icons.email_outlined,
-                                  size: 16,
+                                  size: fs + 2,
                                   color: accent,
                                 ),
                                 const SizedBox(width: 8),
-                                Text(
-                                  _userEmail!,
-                                  style: TextStyle(
-                                    color: accent,
-                                    fontWeight: FontWeight.w500,
+                                Flexible(
+                                  child: Text(
+                                    _userEmail!,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: accent,
+                                      fontSize: fs - 1,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -343,7 +379,6 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // Error message
                           if (_error != null) ...[
                             Container(
                               padding: const EdgeInsets.all(12),
@@ -356,16 +391,19 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.error_outline,
                                     color: Colors.red,
-                                    size: 20,
+                                    size: fs + 6,
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Text(
                                       _error!,
-                                      style: const TextStyle(color: Colors.red),
+                                      style: TextStyle(
+                                        color: Colors.red,
+                                        fontSize: fs - 1,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -377,25 +415,27 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
                           // Section: Personal Information
                           _SectionHeader(
                             icon: Icons.person_outline,
-                            title: 'Personal Information',
+                            title: 'volunteer_application.personal_section'.tr(),
                             accent: accent,
+                            fs: fs,
                           ),
                           const SizedBox(height: 12),
-
                           // Full Name
                           TextFormField(
                             controller: _fullNameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Full Name',
-                              prefixIcon: Icon(Icons.person),
-                              hintText: 'Enter your full name',
+                            style: TextStyle(fontSize: fs),
+                            decoration: InputDecoration(
+                              labelText: 'volunteer_application.full_name'.tr(),
+                              prefixIcon: const Icon(Icons.person),
+                              hintText:
+                                  'volunteer_application.full_name_hint'.tr(),
                             ),
-                            validator: (v) =>
-                                v == null || v.trim().isEmpty ? 'Required' : null,
+                            validator: (v) => v == null || v.trim().isEmpty
+                                ? 'common.required'.tr()
+                                : null,
                           ),
                           const SizedBox(height: 12),
 
-                          // Phone and Age in a row
                           Row(
                             children: [
                               Expanded(
@@ -403,13 +443,15 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
                                 child: TextFormField(
                                   controller: _phoneController,
                                   keyboardType: TextInputType.phone,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Phone Number',
-                                    prefixIcon: Icon(Icons.phone),
+                                  style: TextStyle(fontSize: fs),
+                                  decoration: InputDecoration(
+                                    labelText:
+                                        'volunteer_application.phone'.tr(),
+                                    prefixIcon: const Icon(Icons.phone),
                                   ),
                                   validator: (v) =>
                                       v == null || v.trim().isEmpty
-                                          ? 'Required'
+                                          ? 'common.required'.tr()
                                           : null,
                                 ),
                               ),
@@ -418,17 +460,20 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
                                 child: TextFormField(
                                   controller: _ageController,
                                   keyboardType: TextInputType.number,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Age',
-                                    prefixIcon: Icon(Icons.cake_outlined),
+                                  style: TextStyle(fontSize: fs),
+                                  decoration: InputDecoration(
+                                    labelText:
+                                        'volunteer_application.age'.tr(),
+                                    prefixIcon:
+                                        const Icon(Icons.cake_outlined),
                                   ),
                                   validator: (v) {
                                     if (v == null || v.trim().isEmpty) {
-                                      return 'Required';
+                                      return 'common.required'.tr();
                                     }
                                     final age = int.tryParse(v.trim());
                                     if (age == null || age < 18 || age > 100) {
-                                      return '18-100';
+                                      return 'errors.age_range'.tr();
                                     }
                                     return null;
                                   },
@@ -439,18 +484,19 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
 
                           const SizedBox(height: 24),
 
-                          // Section: Expertise Areas
                           _SectionHeader(
                             icon: Icons.work_outline,
-                            title: 'Expertise Areas',
+                            title:
+                                'volunteer_application.expertise_section'.tr(),
                             accent: accent,
+                            fs: fs,
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Select all that apply',
+                            'common.select_all'.tr(),
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.5),
-                              fontSize: 12,
+                              color: secondaryTextColor,
+                              fontSize: fs - 2,
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -459,7 +505,10 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
                             runSpacing: 8,
                             children: _expertise.keys.map((key) {
                               return FilterChip(
-                                label: Text(_formatExpertise(key)),
+                                label: Text(
+                                  _expertiseLabel(key),
+                                  style: TextStyle(fontSize: fs - 1),
+                                ),
                                 selected: _expertise[key]!,
                                 selectedColor: accent.withOpacity(0.3),
                                 checkmarkColor: accent,
@@ -474,18 +523,19 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
 
                           const SizedBox(height: 24),
 
-                          // Section: Languages
                           _SectionHeader(
                             icon: Icons.language,
-                            title: 'Languages Spoken',
+                            title:
+                                'volunteer_application.languages_section'.tr(),
                             accent: accent,
+                            fs: fs,
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Select all that apply',
+                            'common.select_all'.tr(),
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.5),
-                              fontSize: 12,
+                              color: secondaryTextColor,
+                              fontSize: fs - 2,
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -494,7 +544,10 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
                             runSpacing: 8,
                             children: _languages.keys.map((key) {
                               return FilterChip(
-                                label: Text(key),
+                                label: Text(
+                                  _languageLabel(key),
+                                  style: TextStyle(fontSize: fs - 1),
+                                ),
                                 selected: _languages[key]!,
                                 selectedColor: accent.withOpacity(0.3),
                                 checkmarkColor: accent,
@@ -509,30 +562,36 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
 
                           const SizedBox(height: 24),
 
-                          // Section: Availability
                           _SectionHeader(
                             icon: Icons.schedule,
-                            title: 'Availability Status',
+                            title:
+                                'volunteer_application.availability_section'
+                                    .tr(),
                             accent: accent,
+                            fs: fs,
                           ),
                           const SizedBox(height: 12),
                           DropdownButtonFormField<String>(
                             value: _availability,
+                            style: TextStyle(
+                              fontSize: fs,
+                              color: onSurface,
+                            ),
                             decoration: const InputDecoration(
                               prefixIcon: Icon(Icons.event_available),
                             ),
-                            items: const [
+                            items: [
                               DropdownMenuItem(
                                 value: 'available',
-                                child: Text('Available'),
+                                child: Text(_availabilityLabel('available')),
                               ),
                               DropdownMenuItem(
                                 value: 'busy',
-                                child: Text('Busy'),
+                                child: Text(_availabilityLabel('busy')),
                               ),
                               DropdownMenuItem(
                                 value: 'offline',
-                                child: Text('Offline'),
+                                child: Text(_availabilityLabel('offline')),
                               ),
                             ],
                             onChanged: (value) {
@@ -546,30 +605,33 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
 
                           const SizedBox(height: 24),
 
-                          // Section: Motivation
                           _SectionHeader(
                             icon: Icons.edit_note,
-                            title: 'Why do you want to volunteer?',
+                            title:
+                                'volunteer_application.motivation_section'
+                                    .tr(),
                             accent: accent,
+                            fs: fs,
                           ),
                           const SizedBox(height: 12),
                           TextFormField(
                             controller: _motivationController,
                             maxLines: 4,
-                            decoration: const InputDecoration(
+                            style: TextStyle(fontSize: fs),
+                            decoration: InputDecoration(
                               hintText:
-                                  'Tell us about your motivation and any relevant experience...',
+                                  'volunteer_application.motivation_hint'.tr(),
                               alignLabelWithHint: true,
                             ),
                           ),
 
                           const SizedBox(height: 32),
 
-                          // Submit button
                           SizedBox(
                             height: 52,
                             child: ElevatedButton(
-                              onPressed: _isSubmitting ? null : _submitApplication,
+                              onPressed:
+                                  _isSubmitting ? null : _submitApplication,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: accent,
                                 foregroundColor: Colors.black,
@@ -586,15 +648,16 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
                                         color: Colors.black,
                                       ),
                                     )
-                                  : const Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                  : Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
-                                        Icon(Icons.send_rounded),
-                                        SizedBox(width: 8),
+                                        const Icon(Icons.send_rounded),
+                                        const SizedBox(width: 8),
                                         Text(
-                                          'Submit Application',
+                                          'volunteer_application.submit'.tr(),
                                           style: TextStyle(
-                                            fontSize: 16,
+                                            fontSize: fs,
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
@@ -616,39 +679,34 @@ class _VolunteerApplicationPageState extends State<VolunteerApplicationPage> {
       ),
     );
   }
-
-  String _formatExpertise(String key) {
-    return key
-        .replaceAll('_', ' ')
-        .split(' ')
-        .map((word) => word[0].toUpperCase() + word.substring(1))
-        .join(' ');
-  }
 }
 
-// Section header widget
 class _SectionHeader extends StatelessWidget {
   final IconData icon;
   final String title;
   final Color accent;
+  final double fs;
 
   const _SectionHeader({
     required this.icon,
     required this.title,
     required this.accent,
+    required this.fs,
   });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: accent, size: 20),
+        Icon(icon, color: accent, size: fs + 4),
         const SizedBox(width: 8),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
+        Expanded(
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: fs,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],

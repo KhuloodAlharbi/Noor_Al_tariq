@@ -11,6 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart';
+
 import 'app_settings_provider.dart';
 import 'chat_page.dart';
 
@@ -84,10 +86,10 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
       if (activeCheck.docs.isNotEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('You already have an active request. Resolve it first before accepting a new one.'),
+          SnackBar(
+            content: Text('volunteer_requests.already_active'.tr()),
             backgroundColor: Colors.orange,
-            duration: Duration(seconds: 3),
+            duration: const Duration(seconds: 3),
           ),
         );
         return;
@@ -109,7 +111,6 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
           'acceptedAt': FieldValue.serverTimestamp(),
         });
       });
-
       // Post-transaction: add a system message so the chat isn't empty
       final messagesRef = FirebaseFirestore.instance
           .collection('helpRequests')
@@ -119,14 +120,16 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
       await messagesRef.add({
         'senderId': 'system',
         'senderRole': 'system',
-        'text':
-            '${_volunteerName ?? 'A volunteer'} has accepted your request and is on the way!',
+        'text': 'chat.accepted_message'.tr(
+          namedArgs: {
+            'name': _volunteerName ?? 'Volunteer',
+          },
+        ),
         'sentAt': FieldValue.serverTimestamp(),
         'isRead': false,
       });
 
       if (!mounted) return;
-
       // Open the chat immediately
       Navigator.push(
         context,
@@ -138,7 +141,7 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Could not accept: ${e.toString()}'),
+          content: Text('errors.could_not_accept'.tr()),
           backgroundColor: Colors.red,
         ),
       );
@@ -172,17 +175,9 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
     );
   }
 
-  // ── labels / colours ────────────────────────────────────────────────────────
   String _typeLabel(String? type) {
-    const labels = {
-      'medical': 'Medical Assistance',
-      'navigation': 'Navigation Help',
-      'translation': 'Translation Help',
-      'general_guidance': 'General Help',
-      'emergency_response': 'Emergency Response',
-      'crowd_management': 'Crowd Safety',
-    };
-    return labels[type] ?? type ?? 'Help Request';
+    if (type == null) return 'volunteer_requests.help_request'.tr();
+    return 'volunteer_application.expertise.$type'.tr();
   }
 
   IconData _typeIcon(String? type) {
@@ -222,33 +217,39 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
   String _priorityLabel(int priority) {
     switch (priority) {
       case 5:
-        return 'Life-Threatening';
+        return 'priority.life_threatening'.tr();
       case 4:
-        return 'Urgent';
+        return 'priority.urgent'.tr();
       case 3:
-        return 'Moderate';
+        return 'priority.moderate'.tr();
       case 2:
-        return 'Mild';
+        return 'priority.mild'.tr();
       case 1:
-        return 'Low';
+        return 'priority.low'.tr();
       default:
-        return 'Unknown';
+        return 'priority.unknown'.tr();
     }
   }
 
   String _timeAgo(Timestamp? timestamp) {
     if (timestamp == null) return '';
+
     final diff = DateTime.now().difference(timestamp.toDate());
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
+
+    if (diff.inMinutes < 1) return 'time.just_now'.tr();
+    if (diff.inMinutes < 60) {
+      return 'time.minutes_ago'.tr(namedArgs: {'count': '${diff.inMinutes}'});
+    }
+    if (diff.inHours < 24) {
+      return 'time.hours_ago'.tr(namedArgs: {'count': '${diff.inHours}'});
+    }
+    return 'time.days_ago'.tr(namedArgs: {'count': '${diff.inDays}'});
   }
 
-  // ── build ───────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final fs = context.watch<AppSettingsProvider>().fontSize;
+
     const background = Color(0xFFF7F4EF);
     const cardColor = Color(0xFFFFFFFF);
     const accent = Color(0xFFC9973A);
@@ -268,11 +269,10 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
               child: Text(
-                'Incoming Requests',
+                'volunteer_requests.title'.tr(),
                 style: TextStyle(
                   color: const Color(0xFF1A1A2E),
                   fontSize: fs + 6,
@@ -280,10 +280,11 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                 ),
               ),
             ),
+
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
               child: Text(
-                'Showing requests matching your expertise',
+                'volunteer_requests.subtitle'.tr(),
                 style: TextStyle(
                   color: const Color(0xFF6B6B80),
                   fontSize: fs - 2,
@@ -291,7 +292,6 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
               ),
             ),
 
-            // Expertise chips
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Wrap(
@@ -307,7 +307,9 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                         decoration: BoxDecoration(
                           color: accent.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: accent.withValues(alpha: 0.3)),
+                          border: Border.all(
+                            color: accent.withValues(alpha: 0.3),
+                          ),
                         ),
                         child: Text(
                           _typeLabel(e),
@@ -330,10 +332,10 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
             // ── Stream of pending requests ─────────────────────────────────
             Expanded(
               child: currentUser == null
-                  ? const Center(
+                  ? Center(
                       child: Text(
-                        'Please log in',
-                        style: TextStyle(color: Color(0xFF6B6B80)),
+                        'errors.not_logged_in'.tr(),
+                        style: const TextStyle(color: Color(0xFF6B6B80)),
                       ),
                     )
                   : StreamBuilder<QuerySnapshot>(
@@ -370,9 +372,9 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                   ),
                                   const SizedBox(height: 12),
                                   Text(
-                                    'Index required. Check console for the link to create it.',
-                                    style: TextStyle(
-                                      color: const Color(0xFF6B6B80),
+                                    'errors.index_required'.tr(),
+                                    style: const TextStyle(
+                                      color: Color(0xFF6B6B80),
                                       fontSize: 13,
                                     ),
                                     textAlign: TextAlign.center,
@@ -401,24 +403,24 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.inbox_rounded,
                                   size: 56,
                                   color: Color(0xFFCCCCDD),
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
-                                  'No requests right now',
+                                  'volunteer_requests.empty_title'.tr(),
                                   style: TextStyle(
-                                    color: Color(0xFF6B6B80),
+                                    color: const Color(0xFF6B6B80),
                                     fontSize: fs,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'New help requests will appear here',
+                                  'volunteer_requests.empty_subtitle'.tr(),
                                   style: TextStyle(
-                                    color: Color(0xFF9999AA),
+                                    color: const Color(0xFF9999AA),
                                     fontSize: fs - 2,
                                   ),
                                 ),
@@ -438,6 +440,7 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                             final data = Map<String, dynamic>.from(
                               doc.data() as Map? ?? {},
                             );
+
                             final type =
                                 data['requestType'] as String? ??
                                 'general_guidance';
@@ -465,7 +468,8 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                 ],
                                 border: priority >= 4
                                     ? Border.all(
-                                        color: _priorityColor(priority).withValues(alpha: 0.4),
+                                        color: _priorityColor(priority)
+                                            .withValues(alpha: 0.4),
                                         width: 1,
                                       )
                                     : null,
@@ -489,15 +493,15 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                             Container(
                                               padding: const EdgeInsets.all(8),
                                               decoration: BoxDecoration(
-                                                color: _priorityColor(
-                                                  priority,
-                                                ).withValues(alpha: 0.15),
+                                                color: _priorityColor(priority)
+                                                    .withValues(alpha: 0.15),
                                                 borderRadius:
                                                     BorderRadius.circular(10),
                                               ),
                                               child: Icon(
                                                 _typeIcon(type),
-                                                color: _priorityColor(priority),
+                                                color:
+                                                    _priorityColor(priority),
                                                 size: 22,
                                               ),
                                             ),
@@ -510,7 +514,8 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                                   Text(
                                                     _typeLabel(type),
                                                     style: TextStyle(
-                                                      color: const Color(0xFF1A1A2E),
+                                                      color: const Color(
+                                                          0xFF1A1A2E),
                                                       fontSize: fs,
                                                       fontWeight:
                                                           FontWeight.w600,
@@ -521,53 +526,57 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                                     children: [
                                                       Container(
                                                         padding:
-                                                            const EdgeInsets.symmetric(
-                                                              horizontal: 6,
-                                                              vertical: 2,
-                                                            ),
-                                                        decoration: BoxDecoration(
-                                                          color: _priorityColor(
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                          horizontal: 6,
+                                                          vertical: 2,
+                                                        ),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color:
+                                                              _priorityColor(
                                                             priority,
-                                                          ).withOpacity(0.15),
+                                                          ).withValues(
+                                                            alpha: 0.15,
+                                                          ),
                                                           borderRadius:
-                                                              BorderRadius.circular(
-                                                                6,
-                                                              ),
+                                                              BorderRadius
+                                                                  .circular(6),
                                                         ),
                                                         child: Text(
                                                           _priorityLabel(
-                                                            priority,
-                                                          ),
+                                                              priority),
                                                           style: TextStyle(
                                                             color:
                                                                 _priorityColor(
-                                                                  priority,
-                                                                ),
+                                                                    priority),
                                                             fontSize: fs - 4,
                                                             fontWeight:
-                                                                FontWeight.w600,
+                                                                FontWeight
+                                                                    .w600,
                                                           ),
                                                         ),
                                                       ),
                                                       if (needsAmbulance) ...[
                                                         const SizedBox(
-                                                          width: 6,
-                                                        ),
+                                                            width: 6),
                                                         Container(
                                                           padding:
-                                                              const EdgeInsets.symmetric(
-                                                                horizontal: 6,
-                                                                vertical: 2,
-                                                              ),
-                                                          decoration: BoxDecoration(
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                            horizontal: 6,
+                                                            vertical: 2,
+                                                          ),
+                                                          decoration:
+                                                              BoxDecoration(
                                                             color: Colors.red
-                                                                .withOpacity(
-                                                                  0.15,
-                                                                ),
+                                                                .withValues(
+                                                              alpha: 0.15,
+                                                            ),
                                                             borderRadius:
-                                                                BorderRadius.circular(
-                                                                  6,
-                                                                ),
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        6),
                                                           ),
                                                           child: Row(
                                                             mainAxisSize:
@@ -582,10 +591,10 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                                                 size: fs - 4,
                                                               ),
                                                               const SizedBox(
-                                                                width: 3,
-                                                              ),
+                                                                  width: 3),
                                                               Text(
-                                                                'Ambulance',
+                                                                'volunteer_requests.ambulance'
+                                                                    .tr(),
                                                                 style: TextStyle(
                                                                   color: Colors
                                                                       .red,
@@ -635,9 +644,6 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                             ),
                                             maxLines: 3,
                                             overflow: TextOverflow.ellipsis,
-                                            textDirection: language == 'ar'
-                                                ? TextDirection.rtl
-                                                : TextDirection.ltr,
                                           ),
                                         ),
 
@@ -646,9 +652,9 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                         // Pilgrim info
                                         Row(
                                           children: [
-                                            Icon(
+                                            const Icon(
                                               Icons.person_outline,
-                                              color: const Color(0xFF9999AA),
+                                              color: Color(0xFF9999AA),
                                               size: 16,
                                             ),
                                             const SizedBox(width: 6),
@@ -660,16 +666,16 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                               ),
                                             ),
                                             const Spacer(),
-                                            Icon(
+                                            const Icon(
                                               Icons.language,
-                                              color: const Color(0xFF9999AA),
+                                              color: Color(0xFF9999AA),
                                               size: 14,
                                             ),
                                             const SizedBox(width: 4),
                                             Text(
                                               language == 'ar'
-                                                  ? 'Arabic'
-                                                  : 'English',
+                                                  ? 'languages.arabic'.tr()
+                                                  : 'languages.english'.tr(),
                                               style: TextStyle(
                                                 color: const Color(0xFF6B6B80),
                                                 fontSize: fs - 2,
@@ -682,7 +688,10 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                   ),
 
                                   const SizedBox(height: 12),
-                                  const Divider(color: Color(0xFFE0DBD3), height: 1),
+                                  const Divider(
+                                    color: Color(0xFFE0DBD3),
+                                    height: 1,
+                                  ),
 
                                   // ── Accept / Decline buttons ─────────────
                                   Row(
@@ -691,7 +700,8 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                       Expanded(
                                         child: InkWell(
                                           onTap: () => _declineRequest(doc),
-                                          borderRadius: const BorderRadius.only(
+                                          borderRadius:
+                                              const BorderRadius.only(
                                             bottomLeft: Radius.circular(16),
                                           ),
                                           child: Padding(
@@ -704,16 +714,21 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                               children: [
                                                 Icon(
                                                   Icons.close_rounded,
-                                                  color: Colors.red.withValues(alpha: 0.8),
+                                                  color: Colors.red.withValues(
+                                                    alpha: 0.8,
+                                                  ),
                                                   size: 18,
                                                 ),
                                                 const SizedBox(width: 6),
                                                 Text(
-                                                  'Decline',
+                                                  'volunteer_requests.decline'
+                                                      .tr(),
                                                   style: TextStyle(
-                                                    color: Colors.red.withValues(alpha: 0.8),
+                                                    color: Colors.red
+                                                        .withValues(alpha: 0.8),
                                                     fontSize: fs - 1,
-                                                    fontWeight: FontWeight.w600,
+                                                    fontWeight:
+                                                        FontWeight.w600,
                                                   ),
                                                 ),
                                               ],
@@ -721,12 +736,15 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                           ),
                                         ),
                                       ),
-                                      const VerticalDivider(color: Color(0xFFE0DBD3), width: 1),
-                                      // Accept → opens chat
+                                      const VerticalDivider(
+                                        color: Color(0xFFE0DBD3),
+                                        width: 1,
+                                      ),
                                       Expanded(
                                         child: InkWell(
                                           onTap: () => _acceptRequest(doc),
-                                          borderRadius: const BorderRadius.only(
+                                          borderRadius:
+                                              const BorderRadius.only(
                                             bottomRight: Radius.circular(16),
                                           ),
                                           child: Padding(
@@ -744,11 +762,14 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                                 ),
                                                 const SizedBox(width: 6),
                                                 Text(
-                                                  'Accept & Chat',
+                                                  'volunteer_requests.accept_chat'
+                                                      .tr(),
                                                   style: TextStyle(
-                                                    color: const Color(0xFFC9973A),
+                                                    color:
+                                                        const Color(0xFFC9973A),
                                                     fontSize: fs - 1,
-                                                    fontWeight: FontWeight.w600,
+                                                    fontWeight:
+                                                        FontWeight.w600,
                                                   ),
                                                 ),
                                               ],
@@ -772,13 +793,13 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
               child: Row(
                 children: [
-                  Expanded(
+                  const Expanded(
                     child: Divider(color: Color(0xFFE0DBD3), height: 1),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: Text(
-                      'My Active Chats',
+                      'volunteer_requests.active_chats'.tr(),
                       style: TextStyle(
                         color: const Color(0xFF9999AA),
                         fontSize: fs - 3,
@@ -786,7 +807,7 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                       ),
                     ),
                   ),
-                  Expanded(
+                  const Expanded(
                     child: Divider(color: Color(0xFFE0DBD3), height: 1),
                   ),
                 ],
@@ -805,27 +826,27 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                             isEqualTo: currentUser.uid,
                           )
                           .snapshots(),
-                      builder: (ctx, snap) {
-                        // Client-side filter for accepted/in_progress only
+                      builder: (ctx, snap) {                       
+                         // Client-side filter for accepted/in_progress only
                         final activeDocs = (snap.data?.docs ?? []).where((d) {
-                          final s =
-                              (Map<String, dynamic>.from(
-                                    d.data() as Map? ?? {},
-                                  ))['status']
-                                  as String?;
+                          final s = (Map<String, dynamic>.from(
+                            d.data() as Map? ?? {},
+                          ))['status'] as String?;
                           return s == 'accepted' || s == 'in_progress';
                         }).toList();
+
                         if (activeDocs.isEmpty) {
                           return Center(
                             child: Text(
-                              'No active chats',
-                              style: TextStyle(
-                                color: const Color(0xFF9999AA),
+                              'volunteer_requests.no_active'.tr(),
+                              style: const TextStyle(
+                                color: Color(0xFF9999AA),
                                 fontSize: 12,
                               ),
                             ),
                           );
                         }
+
                         return ListView.builder(
                           scrollDirection: Axis.horizontal,
                           padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -834,11 +855,13 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                             final d = Map<String, dynamic>.from(
                               activeDocs[i].data() as Map? ?? {},
                             );
+
                             final pName =
                                 d['pilgrimName'] as String? ?? 'Pilgrim';
                             final type =
                                 d['requestType'] as String? ??
                                 'general_guidance';
+
                             return GestureDetector(
                               onTap: () => _openChat(activeDocs[i].id),
                               child: Container(
@@ -862,7 +885,8 @@ class _VolunteerRequestsTabState extends State<VolunteerRequestsTab> {
                                     ),
                                   ],
                                   border: Border.all(
-                                    color: const Color(0xFFC9973A).withValues(alpha: 0.4),
+                                    color: const Color(0xFFC9973A)
+                                        .withValues(alpha: 0.4),
                                   ),
                                 ),
                                 child: Row(

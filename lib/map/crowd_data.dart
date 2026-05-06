@@ -10,16 +10,16 @@ class CrowdData {
     // Around the Kaaba — usually very crowded
     CrowdZone(
       id: "mataf",
-      name: "Mataf (around Kaaba)",
+      nameKey: "crowd_zones.mataf.name",
       center: LatLng(21.4225, 39.8262),
       radius: 80,
-      density: 0.9, // RED
+      density: 0.9,
     ),
-
+    
     // Saee area — medium busy
     CrowdZone(
       id: "saee_zone",
-      name: "Saee Area",
+      nameKey: "crowd_zones.saee_zone.name",
       center: LatLng(21.4220, 39.8280),
       radius: 60,
       density: 0.55, // YELLOW
@@ -28,7 +28,7 @@ class CrowdData {
     // King Abdulaziz Gate — light crowd
     CrowdZone(
       id: "gate_zone",
-      name: "King Abdulaziz Gate",
+      nameKey: "crowd_zones.gate_zone.name",
       center: LatLng(21.4220, 39.8275),
       radius: 50,
       density: 0.3, // GREEN
@@ -37,7 +37,7 @@ class CrowdData {
     // Outer courtyard — very calm
     CrowdZone(
       id: "outer",
-      name: "Outer Courtyard",
+      nameKey: "crowd_zones.outer.name",
       center: LatLng(21.4250, 39.8240),
       radius: 70,
       density: 0.2, // GREEN
