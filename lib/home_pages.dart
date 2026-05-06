@@ -16,6 +16,11 @@ import 'package:adhan_dart/adhan_dart.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:provider/provider.dart';
 import 'package:noor_al_tariq/api/api_service.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'role_selection_page.dart';
 import 'app_settings_provider.dart';
@@ -2454,13 +2459,14 @@ class _AppSettingsContent extends StatefulWidget {
 class _AppSettingsContentState extends State<_AppSettingsContent> {
   bool _isAvailable = true;
   bool _prayerNotificationsEnabled = false;
+  static final FlutterLocalNotificationsPlugin _notifPlugin = FlutterLocalNotificationsPlugin();
 
-  @override
-  void initState() {
-    super.initState();
-    _loadSettings();
-  }
-
+@override
+void initState() {
+  super.initState();
+  _initNotifications();
+  _loadSettings();
+}
   Future<void> _loadSettings() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -2476,6 +2482,103 @@ class _AppSettingsContentState extends State<_AppSettingsContent> {
       });
     }
   }
+// ================= INIT NOTIFICATIONS =================
+Future<void> _initNotifications() async {
+  tz.initializeTimeZones();
+
+  await Permission.notification.request();
+
+  const android =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
+
+  const ios = DarwinInitializationSettings();
+
+  await _notifPlugin.initialize(
+    const InitializationSettings(
+      android: android,
+      iOS: ios,
+    ),
+  );
+}
+// ================= SCHEDULE PRAYER NOTIFICATIONS =================
+Future<void> _schedulePrayerNotifications() async {
+  await _notifPlugin.cancelAll();
+
+  tz.initializeTimeZones();
+
+  try {
+    tz.setLocalLocation(tz.getLocation(DateTime.now().timeZoneName));
+  } catch (_) {
+    tz.setLocalLocation(tz.UTC);
+  }
+
+  const coordinates = Coordinates(21.3891, 39.8579);
+
+  CalculationParameters params =
+      CalculationMethodParameters.muslimWorldLeague()
+        ..madhab = Madhab.shafi;
+
+  final now = DateTime.now();
+  int id = 0;
+
+  for (int day = 0; day < 30; day++) {
+    final date = now.add(Duration(days: day));
+
+    final prayerTimes = PrayerTimes(
+      coordinates: coordinates,
+      date: date,
+      calculationParameters: params,
+      precision: true,
+    );
+
+    final prayers = {
+      'prayers.fajr'.tr():    prayerTimes.fajr,
+      'prayers.dhuhr'.tr():   prayerTimes.dhuhr,
+      'prayers.asr'.tr():     prayerTimes.asr,
+      'prayers.maghrib'.tr(): prayerTimes.maghrib,
+      'prayers.isha'.tr():    prayerTimes.isha,
+    };
+
+    for (final entry in prayers.entries) {
+      final prayerUtc = entry.value;
+      if (prayerUtc == null) continue;
+
+      final prayerLocal = prayerUtc.toLocal();
+
+      if (prayerLocal.isBefore(now)) {
+        id++;
+        continue;
+      }
+
+      final scheduledDate = tz.TZDateTime.from(prayerLocal, tz.local);
+
+      await _notifPlugin.zonedSchedule(
+        id++,
+        'prayers.notification_title'.tr(),
+        'prayers.notification_body'.tr(namedArgs: {'prayer': entry.key}),
+        scheduledDate,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'prayer_channel',
+            'Prayer Times',
+            channelDescription: 'Prayer time reminders',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(),
+        ),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    }
+  }
+}
+
+// ================= CANCEL NOTIFICATIONS =================
+Future<void> _cancelPrayerNotifications() async {
+  await _notifPlugin.cancelAll();
+}
 
   @override
   Widget build(BuildContext context) {
@@ -2533,12 +2636,19 @@ class _AppSettingsContentState extends State<_AppSettingsContent> {
                 'profile.notifications_enable'.tr(),
                 'profile.notifications_subtitle'.tr(),
                 _prayerNotificationsEnabled,
-                (v) {
+                (v) async {
                   setState(() => _prayerNotificationsEnabled = v);
-                  FirebaseFirestore.instance
+
+                  await FirebaseFirestore.instance
                       .collection('users')
                       .doc(FirebaseAuth.instance.currentUser?.uid)
                       .update({'prayerNotifications': v});
+
+                  if (v) {
+                    await _schedulePrayerNotifications();
+                  } else {
+                    await _cancelPrayerNotifications();
+                  }
                 },
                 fs,
               ),
