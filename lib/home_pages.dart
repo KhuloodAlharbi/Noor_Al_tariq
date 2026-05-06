@@ -389,6 +389,7 @@ class _HomeTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final fs = context.watch<AppSettingsProvider>().fontSize;
     final isArabic = context.locale.languageCode == 'ar';
+    final isUrdu = context.locale.languageCode == 'ur';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -439,7 +440,7 @@ class _HomeTab extends StatelessWidget {
                   ),
                 ),
 
-                if (!isArabic) ...[
+                if (!isArabic && !isUrdu) ...[
                   const SizedBox(height: 8),
                   Text(
                     'home.daily_dua_transliteration'.tr(),
@@ -2680,6 +2681,7 @@ class _AppSettingsContentState extends State<_AppSettingsContent> {
     double fs,
   ) {
     final isAr = context.locale == const Locale('ar');
+    final isUr = context.locale == const Locale('ur');
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -2700,12 +2702,14 @@ class _AppSettingsContentState extends State<_AppSettingsContent> {
           ),
           const SizedBox(height: 12),
           Row(
-            children: [
-              _langBtn('en', 'English', !isAr, acc, settings, fs),
-              const SizedBox(width: 8),
-              _langBtn('ar', 'العربية', isAr, acc, settings, fs),
-            ],
-          ),
+          children: [
+            _langBtn('en', 'English', !isAr && !isUr, acc, settings, fs),
+            const SizedBox(width: 8),
+            _langBtn('ar', 'العربية', isAr, acc, settings, fs),
+            const SizedBox(width: 8),
+            _langBtn('ur', 'اردو', isUr, acc, settings, fs),
+          ],
+        )
         ],
       ),
     );
@@ -2722,7 +2726,13 @@ class _AppSettingsContentState extends State<_AppSettingsContent> {
     child: GestureDetector(
       onTap: () async {
         await context.setLocale(Locale(code));
-        await settings.setLanguage(code == 'ar' ? 'Arabic' : 'English');
+        await settings.setLanguage(
+          code == 'ar'
+              ? 'Arabic'
+              : code == 'ur'
+                  ? 'Urdu'
+                  : 'English',
+        );
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),

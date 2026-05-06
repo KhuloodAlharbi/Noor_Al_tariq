@@ -38,11 +38,19 @@ class AppSettingsProvider extends ChangeNotifier {
 
         // Language — delegate to easy_localization
         final lang = data['language'] as String? ?? 'English';
-        final locale = lang == 'Arabic' ? const Locale('ar') : const Locale('en');
+
+        Locale locale;
+        if (lang == 'Arabic') {
+          locale = const Locale('ar');
+        } else if (lang == 'Urdu') {
+          locale = const Locale('ur');
+        } else {
+          locale = const Locale('en');
+        }
+
         if (context.locale != locale) {
           await context.setLocale(locale);
         }
-
         notifyListeners();
       }
     } catch (_) {}
