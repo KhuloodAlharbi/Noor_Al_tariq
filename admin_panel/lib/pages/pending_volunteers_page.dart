@@ -1,12 +1,14 @@
 // =============================================================================
 // FILE: admin_panel/lib/pages/pending_volunteers_page.dart
-// DESCRIPTION: Displays pending volunteer applications with approve/decline
+// DESCRIPTION: Pending volunteer applications – light / warm theme
 // =============================================================================
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+
+import '../main.dart'; // AppColors
 
 class PendingVolunteersPage extends StatefulWidget {
   const PendingVolunteersPage({super.key});
@@ -16,50 +18,42 @@ class PendingVolunteersPage extends StatefulWidget {
 }
 
 class _PendingVolunteersPageState extends State<PendingVolunteersPage> {
-  String? _selectedApplicationId;
+  String?              _selectedApplicationId;
   Map<String, dynamic>? _selectedApplicationData;
 
   @override
   Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
-
     return Row(
       children: [
-        // Left side - List of applications
+        // ── Left: list ───────────────────────────────────────────────────
         Expanded(
           flex: 2,
           child: Container(
-            color: const Color(0xFF050509),
+            color:  AppColors.background,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header
                 Padding(
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
+                    children: const [
+                      Text(
                         'Pending Volunteer Requests',
                         style: TextStyle(
-                          fontSize: 24,
+                          fontSize:   24,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color:      AppColors.textPrimary,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Text(
                         'Review and process volunteer applications',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
                       ),
                     ],
                   ),
                 ),
-
-                // Applications list
                 Expanded(
                   child: StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
@@ -76,10 +70,9 @@ class _PendingVolunteersPageState extends State<PendingVolunteersPage> {
                           ),
                         );
                       }
-
                       if (!snapshot.hasData) {
                         return const Center(
-                          child: CircularProgressIndicator(),
+                          child: CircularProgressIndicator(color: AppColors.accent),
                         );
                       }
 
@@ -92,24 +85,22 @@ class _PendingVolunteersPageState extends State<PendingVolunteersPage> {
                             children: [
                               Icon(
                                 Icons.check_circle_outline,
-                                size: 64,
-                                color: Colors.green.withOpacity(0.5),
+                                size:  64,
+                                color: const Color(0xFF10B981).withOpacity(0.4),
                               ),
                               const SizedBox(height: 16),
                               const Text(
                                 'All caught up!',
                                 style: TextStyle(
-                                  fontSize: 20,
+                                  fontSize:   20,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.white,
+                                  color:      AppColors.textPrimary,
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              Text(
+                              const Text(
                                 'No pending volunteer requests',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.5),
-                                ),
+                                style: TextStyle(color: AppColors.textSecondary),
                               ),
                             ],
                           ),
@@ -117,20 +108,19 @@ class _PendingVolunteersPageState extends State<PendingVolunteersPage> {
                       }
 
                       return ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        itemCount: docs.length,
+                        padding:    const EdgeInsets.symmetric(horizontal: 24),
+                        itemCount:  docs.length,
                         itemBuilder: (context, index) {
-                          final doc = docs[index];
-                          final data = doc.data() as Map<String, dynamic>;
+                          final doc        = docs[index];
+                          final data       = doc.data() as Map<String, dynamic>;
                           final isSelected = _selectedApplicationId == doc.id;
 
                           return _ApplicationCard(
-                            data: data,
+                            data:       data,
                             isSelected: isSelected,
-                            accent: accent,
                             onTap: () {
                               setState(() {
-                                _selectedApplicationId = doc.id;
+                                _selectedApplicationId   = doc.id;
                                 _selectedApplicationData = data;
                               });
                             },
@@ -145,11 +135,14 @@ class _PendingVolunteersPageState extends State<PendingVolunteersPage> {
           ),
         ),
 
-        // Right side - Application details
+        // ── Right: detail panel ──────────────────────────────────────────
         Expanded(
           flex: 3,
           child: Container(
-            color: const Color(0xFF0A0A10),
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              border: Border(left: BorderSide(color: AppColors.divider)),
+            ),
             child: _selectedApplicationData == null
                 ? Center(
                     child: Column(
@@ -157,14 +150,14 @@ class _PendingVolunteersPageState extends State<PendingVolunteersPage> {
                       children: [
                         Icon(
                           Icons.touch_app_outlined,
-                          size: 64,
-                          color: Colors.white.withOpacity(0.2),
+                          size:  64,
+                          color: AppColors.textSecondary.withOpacity(0.3),
                         ),
                         const SizedBox(height: 16),
-                        Text(
+                        const Text(
                           'Select an application to view details',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.5),
+                            color:    AppColors.textSecondary,
                             fontSize: 16,
                           ),
                         ),
@@ -172,12 +165,11 @@ class _PendingVolunteersPageState extends State<PendingVolunteersPage> {
                     ),
                   )
                 : _ApplicationDetails(
-                    applicationId: _selectedApplicationId!,
-                    data: _selectedApplicationData!,
-                    accent: accent,
+                    applicationId:  _selectedApplicationId!,
+                    data:           _selectedApplicationData!,
                     onActionComplete: () {
                       setState(() {
-                        _selectedApplicationId = null;
+                        _selectedApplicationId   = null;
                         _selectedApplicationData = null;
                       });
                     },
@@ -189,58 +181,55 @@ class _PendingVolunteersPageState extends State<PendingVolunteersPage> {
   }
 }
 
+// ── Application card ──────────────────────────────────────────────────────────
 class _ApplicationCard extends StatelessWidget {
   final Map<String, dynamic> data;
-  final bool isSelected;
-  final Color accent;
-  final VoidCallback onTap;
+  final bool                 isSelected;
+  final VoidCallback         onTap;
 
   const _ApplicationCard({
     required this.data,
     required this.isSelected,
-    required this.accent,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final name = data['fullName'] as String? ?? 'Unknown';
-    final email = data['email'] as String? ?? '';
+    final name      = data['fullName']  as String? ?? 'Unknown';
+    final email     = data['email']     as String? ?? '';
     final createdAt = data['createdAt'] as Timestamp?;
-    final dateStr = createdAt != null
+    final dateStr   = createdAt != null
         ? DateFormat('MMM d, yyyy').format(createdAt.toDate())
         : 'Unknown date';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
-        color: isSelected
-            ? accent.withOpacity(0.15)
-            : const Color(0xFF17171F),
+        color:        isSelected ? AppColors.accent.withOpacity(0.1) : AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: onTap,
+          onTap:        onTap,
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isSelected ? accent : Colors.transparent,
-                width: 1,
+                color: isSelected ? AppColors.accent : AppColors.cardBorder,
+                width: isSelected ? 1.5 : 1,
               ),
             ),
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 24,
-                  backgroundColor: accent.withOpacity(0.2),
+                  radius:          24,
+                  backgroundColor: AppColors.accent.withOpacity(0.15),
                   child: Text(
                     name.isNotEmpty ? name[0].toUpperCase() : '?',
-                    style: TextStyle(
-                      color: accent,
+                    style: const TextStyle(
+                      color:      AppColors.accent,
                       fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                      fontSize:   18,
                     ),
                   ),
                 ),
@@ -253,15 +242,15 @@ class _ApplicationCard extends StatelessWidget {
                         name,
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                          fontSize: 15,
+                          color:      AppColors.textPrimary,
+                          fontSize:   15,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         email,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.5),
+                        style: const TextStyle(
+                          color:    AppColors.textSecondary,
                           fontSize: 13,
                         ),
                       ),
@@ -272,28 +261,25 @@ class _ApplicationCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.2),
+                        color:        const Color(0xFFF59E0B).withOpacity(0.12),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Text(
                         'Pending',
                         style: TextStyle(
-                          color: Colors.orange,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
+                          color:      Color(0xFFD97706),
+                          fontSize:   11,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       dateStr,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.4),
+                      style: const TextStyle(
+                        color:    AppColors.textSecondary,
                         fontSize: 11,
                       ),
                     ),
@@ -308,16 +294,15 @@ class _ApplicationCard extends StatelessWidget {
   }
 }
 
+// ── Application details panel ─────────────────────────────────────────────────
 class _ApplicationDetails extends StatefulWidget {
-  final String applicationId;
+  final String               applicationId;
   final Map<String, dynamic> data;
-  final Color accent;
-  final VoidCallback onActionComplete;
+  final VoidCallback         onActionComplete;
 
   const _ApplicationDetails({
     required this.applicationId,
     required this.data,
-    required this.accent,
     required this.onActionComplete,
   });
 
@@ -337,50 +322,38 @@ class _ApplicationDetailsState extends State<_ApplicationDetails> {
 
   Future<void> _approveApplication() async {
     setState(() => _isProcessing = true);
-
     try {
       final uid = widget.data['uid'] as String?;
       if (uid == null) throw Exception('User ID not found');
 
-      final adminUid = FirebaseAuth.instance.currentUser?.uid;
+      final adminUid  = FirebaseAuth.instance.currentUser?.uid;
       final firestore = FirebaseFirestore.instance;
-      final batch = firestore.batch();
+      final batch     = firestore.batch();
 
-      // Update volunteer_applications document
-      final appRef = firestore.collection('volunteer_applications').doc(uid);
-      batch.update(appRef, {
-        'status': 'approved',
+      batch.update(firestore.collection('volunteer_applications').doc(uid), {
+        'status':     'approved',
         'reviewedAt': FieldValue.serverTimestamp(),
         'reviewedBy': adminUid,
       });
-
-      // Update users document
-      final userRef = firestore.collection('users').doc(uid);
-      batch.update(userRef, {
-        'isVolunteer': true,
-        'volunteerApplicationStatus': 'approved',
-        'updatedAt': FieldValue.serverTimestamp(),
+      batch.update(firestore.collection('users').doc(uid), {
+        'isVolunteer':                  true,
+        'volunteerApplicationStatus':   'approved',
+        'updatedAt':                    FieldValue.serverTimestamp(),
       });
-
       await batch.commit();
 
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Volunteer approved successfully!'),
-          backgroundColor: Colors.green,
+          content:         Text('Volunteer approved successfully!'),
+          backgroundColor: Color(0xFF10B981),
         ),
       );
-
       widget.onActionComplete();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) setState(() => _isProcessing = false);
@@ -388,25 +361,30 @@ class _ApplicationDetailsState extends State<_ApplicationDetails> {
   }
 
   Future<void> _declineApplication() async {
-    // Show decline reason dialog
     final reason = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF17171F),
-        title: const Text('Decline Application'),
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Decline Application',
+          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
               'Optionally provide a reason for declining:',
-              style: TextStyle(color: Colors.white70),
+              style: TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _declineReasonController,
-              maxLines: 3,
+              maxLines:   3,
+              style: const TextStyle(color: AppColors.textPrimary),
               decoration: const InputDecoration(
-                hintText: 'Reason (optional)',
+                hintText:  'Reason (optional)',
+                hintStyle: TextStyle(color: AppColors.textSecondary),
               ),
             ),
           ],
@@ -414,72 +392,52 @@ class _ApplicationDetailsState extends State<_ApplicationDetails> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(
-              context,
-              _declineReasonController.text.trim(),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
-            child: const Text(
-              'Decline',
-              style: TextStyle(color: Colors.white),
-            ),
+            onPressed: () => Navigator.pop(context, _declineReasonController.text.trim()),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444)),
+            child: const Text('Decline', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
 
-    if (reason == null) return; // User cancelled
-
+    if (reason == null) return;
     setState(() => _isProcessing = true);
 
     try {
       final uid = widget.data['uid'] as String?;
       if (uid == null) throw Exception('User ID not found');
 
-      final adminUid = FirebaseAuth.instance.currentUser?.uid;
+      final adminUid  = FirebaseAuth.instance.currentUser?.uid;
       final firestore = FirebaseFirestore.instance;
-      final batch = firestore.batch();
+      final batch     = firestore.batch();
 
-      // Update volunteer_applications document
-      final appRef = firestore.collection('volunteer_applications').doc(uid);
-      batch.update(appRef, {
-        'status': 'declined',
+      batch.update(firestore.collection('volunteer_applications').doc(uid), {
+        'status':        'declined',
         'declineReason': reason.isNotEmpty ? reason : null,
-        'reviewedAt': FieldValue.serverTimestamp(),
-        'reviewedBy': adminUid,
+        'reviewedAt':    FieldValue.serverTimestamp(),
+        'reviewedBy':    adminUid,
       });
-
-      // Update users document
-      final userRef = firestore.collection('users').doc(uid);
-      batch.update(userRef, {
+      batch.update(firestore.collection('users').doc(uid), {
         'volunteerApplicationStatus': 'declined',
-        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedAt':                  FieldValue.serverTimestamp(),
       });
-
       await batch.commit();
 
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Application declined.'),
-          backgroundColor: Colors.orange,
+          content:         Text('Application declined.'),
+          backgroundColor: Color(0xFFF59E0B),
         ),
       );
-
       widget.onActionComplete();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) {
@@ -491,36 +449,34 @@ class _ApplicationDetailsState extends State<_ApplicationDetails> {
 
   @override
   Widget build(BuildContext context) {
-    final data = widget.data;
-    final accent = widget.accent;
-
-    final name = data['fullName'] as String? ?? 'Unknown';
-    final email = data['email'] as String? ?? 'N/A';
-    final phone = data['phone'] as String? ?? 'N/A';
-    final age = data['age']?.toString() ?? 'N/A';
-    final expertise = (data['expertiseAreas'] as List?)?.cast<String>() ?? [];
-    final languages = (data['languages'] as List?)?.cast<String>() ?? [];
+    final data         = widget.data;
+    final name         = data['fullName']         as String? ?? 'Unknown';
+    final email        = data['email']            as String? ?? 'N/A';
+    final phone        = data['phone']            as String? ?? 'N/A';
+    final age          = data['age']?.toString()  ?? 'N/A';
+    final expertise    = (data['expertiseAreas']  as List?)?.cast<String>() ?? [];
+    final languages    = (data['languages']       as List?)?.cast<String>() ?? [];
     final availability = data['availabilityStatus'] as String? ?? 'N/A';
-    final motivation = data['motivation'] as String? ?? '';
-    final createdAt = data['createdAt'] as Timestamp?;
+    final motivation   = data['motivation']       as String? ?? '';
+    final createdAt    = data['createdAt']        as Timestamp?;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with avatar and name
+          // Header
           Row(
             children: [
               CircleAvatar(
-                radius: 40,
-                backgroundColor: accent.withOpacity(0.2),
+                radius:          40,
+                backgroundColor: AppColors.accent.withOpacity(0.15),
                 child: Text(
                   name.isNotEmpty ? name[0].toUpperCase() : '?',
-                  style: TextStyle(
-                    color: accent,
+                  style: const TextStyle(
+                    color:      AppColors.accent,
                     fontWeight: FontWeight.bold,
-                    fontSize: 32,
+                    fontSize:   32,
                   ),
                 ),
               ),
@@ -532,24 +488,24 @@ class _ApplicationDetailsState extends State<_ApplicationDetails> {
                     Text(
                       name,
                       style: const TextStyle(
-                        fontSize: 28,
+                        fontSize:   26,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color:      AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       email,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
-                        fontSize: 16,
+                      style: const TextStyle(
+                        color:    AppColors.textSecondary,
+                        fontSize: 15,
                       ),
                     ),
                     if (createdAt != null)
                       Text(
-                        'Applied ${DateFormat('MMMM d, yyyy \'at\' h:mm a').format(createdAt.toDate())}',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.4),
+                        'Applied ${DateFormat("MMMM d, yyyy 'at' h:mm a").format(createdAt.toDate())}',
+                        style: const TextStyle(
+                          color:    AppColors.textSecondary,
                           fontSize: 13,
                         ),
                       ),
@@ -559,41 +515,38 @@ class _ApplicationDetailsState extends State<_ApplicationDetails> {
             ],
           ),
 
-          const SizedBox(height: 32),
-          const Divider(color: Colors.white12),
+          const SizedBox(height: 28),
+          const Divider(color: AppColors.divider),
           const SizedBox(height: 24),
 
-          // Details sections
+          // Detail columns
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Left column
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _DetailSection(
                       title: 'Contact Information',
-                      icon: Icons.contact_mail_outlined,
-                      accent: accent,
+                      icon:  Icons.contact_mail_outlined,
                       children: [
                         _DetailRow(label: 'Email', value: email),
                         _DetailRow(label: 'Phone', value: phone),
-                        _DetailRow(label: 'Age', value: age),
+                        _DetailRow(label: 'Age',   value: age),
                       ],
                     ),
                     const SizedBox(height: 24),
                     _DetailSection(
                       title: 'Availability',
-                      icon: Icons.schedule_outlined,
-                      accent: accent,
+                      icon:  Icons.schedule_outlined,
                       children: [
                         _DetailRow(
-                          label: 'Status',
-                          value: availability.toUpperCase(),
+                          label:      'Status',
+                          value:      availability.toUpperCase(),
                           valueColor: availability == 'available'
-                              ? Colors.green
-                              : Colors.orange,
+                              ? const Color(0xFF10B981)
+                              : const Color(0xFFF59E0B),
                         ),
                       ],
                     ),
@@ -601,38 +554,33 @@ class _ApplicationDetailsState extends State<_ApplicationDetails> {
                 ),
               ),
               const SizedBox(width: 32),
-              // Right column
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _DetailSection(
                       title: 'Expertise Areas',
-                      icon: Icons.work_outline,
-                      accent: accent,
+                      icon:  Icons.work_outline,
                       children: [
                         Wrap(
-                          spacing: 8,
+                          spacing:    8,
                           runSpacing: 8,
                           children: expertise.map((e) {
                             return Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
+                                horizontal: 12, vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: accent.withOpacity(0.1),
+                                color:        AppColors.accent.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: accent.withOpacity(0.3),
-                                ),
+                                border:       Border.all(color: AppColors.accent.withOpacity(0.3)),
                               ),
                               child: Text(
                                 e.replaceAll('_', ' ').toUpperCase(),
-                                style: TextStyle(
-                                  color: accent,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
+                                style: const TextStyle(
+                                  color:      AppColors.accent,
+                                  fontSize:   12,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             );
@@ -643,30 +591,28 @@ class _ApplicationDetailsState extends State<_ApplicationDetails> {
                     const SizedBox(height: 24),
                     _DetailSection(
                       title: 'Languages',
-                      icon: Icons.language,
-                      accent: accent,
+                      icon:  Icons.language,
                       children: [
                         Wrap(
-                          spacing: 8,
+                          spacing:    8,
                           runSpacing: 8,
                           children: languages.map((l) {
                             return Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
+                                horizontal: 12, vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.1),
+                                color:        const Color(0xFF3B82F6).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: Colors.blue.withOpacity(0.3),
+                                border:       Border.all(
+                                  color: const Color(0xFF3B82F6).withOpacity(0.3),
                                 ),
                               ),
                               child: Text(
                                 l,
                                 style: const TextStyle(
-                                  color: Colors.blue,
-                                  fontSize: 12,
+                                  color:      Color(0xFF2563EB),
+                                  fontSize:   12,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -681,27 +627,27 @@ class _ApplicationDetailsState extends State<_ApplicationDetails> {
             ],
           ),
 
-          // Motivation section
+          // Motivation
           if (motivation.isNotEmpty) ...[
             const SizedBox(height: 24),
             _DetailSection(
               title: 'Motivation',
-              icon: Icons.edit_note,
-              accent: accent,
+              icon:  Icons.edit_note,
               children: [
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
+                    color:        AppColors.background,
                     borderRadius: BorderRadius.circular(12),
+                    border:       Border.all(color: AppColors.cardBorder),
                   ),
                   child: Text(
                     motivation,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
+                    style: const TextStyle(
+                      color:    AppColors.textPrimary,
                       fontSize: 14,
-                      height: 1.5,
+                      height:   1.5,
                     ),
                   ),
                 ),
@@ -719,13 +665,14 @@ class _ApplicationDetailsState extends State<_ApplicationDetails> {
                   height: 50,
                   child: OutlinedButton.icon(
                     onPressed: _isProcessing ? null : _declineApplication,
-                    icon: const Icon(Icons.close, color: Colors.red),
+                    icon:  const Icon(Icons.close, color: Color(0xFFEF4444)),
                     label: const Text(
                       'Decline',
-                      style: TextStyle(color: Colors.red),
+                      style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w600),
                     ),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.red),
+                      side:        const BorderSide(color: Color(0xFFEF4444)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                 ),
@@ -739,17 +686,21 @@ class _ApplicationDetailsState extends State<_ApplicationDetails> {
                     onPressed: _isProcessing ? null : _approveApplication,
                     icon: _isProcessing
                         ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.black,
-                            ),
+                            width: 20, height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
-                        : const Icon(Icons.check),
-                    label: Text(_isProcessing ? 'Processing...' : 'Approve Volunteer'),
+                        : const Icon(Icons.check, color: Colors.white),
+                    label: Text(
+                      _isProcessing ? 'Processing...' : 'Approve Volunteer',
+                      style: const TextStyle(
+                        color:      Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize:   15,
+                      ),
+                    ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
+                      backgroundColor: const Color(0xFF10B981),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                 ),
@@ -762,16 +713,15 @@ class _ApplicationDetailsState extends State<_ApplicationDetails> {
   }
 }
 
+// ── Section heading ───────────────────────────────────────────────────────────
 class _DetailSection extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final Color accent;
+  final String       title;
+  final IconData     icon;
   final List<Widget> children;
 
   const _DetailSection({
     required this.title,
     required this.icon,
-    required this.accent,
     required this.children,
   });
 
@@ -782,14 +732,14 @@ class _DetailSection extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(icon, color: accent, size: 20),
+            Icon(icon, color: AppColors.accent, size: 20),
             const SizedBox(width: 8),
             Text(
               title,
               style: const TextStyle(
-                fontSize: 16,
+                fontSize:   16,
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color:      AppColors.textPrimary,
               ),
             ),
           ],
@@ -801,10 +751,11 @@ class _DetailSection extends StatelessWidget {
   }
 }
 
+// ── Label + value row ─────────────────────────────────────────────────────────
 class _DetailRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color? valueColor;
+  final String  label;
+  final String  value;
+  final Color?  valueColor;
 
   const _DetailRow({
     required this.label,
@@ -823,18 +774,15 @@ class _DetailRow extends StatelessWidget {
             width: 80,
             child: Text(
               label,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
-                fontSize: 13,
-              ),
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
             ),
           ),
           Expanded(
             child: Text(
               value,
               style: TextStyle(
-                color: valueColor ?? Colors.white,
-                fontSize: 14,
+                color:      valueColor ?? AppColors.textPrimary,
+                fontSize:   14,
                 fontWeight: FontWeight.w500,
               ),
             ),

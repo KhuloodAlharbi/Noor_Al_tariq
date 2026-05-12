@@ -1,25 +1,25 @@
 // =============================================================================
 // FILE: admin_panel/lib/pages/approved_volunteers_page.dart
-// DESCRIPTION: Displays approved volunteers with details
+// DESCRIPTION: Displays approved volunteers – light / warm theme
 // =============================================================================
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
+import '../main.dart'; // AppColors
+
 class ApprovedVolunteersPage extends StatelessWidget {
   const ApprovedVolunteersPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
-
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
+          // ── Header ──────────────────────────────────────────────────────
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -29,22 +29,18 @@ class ApprovedVolunteersPage extends StatelessWidget {
                   const Text(
                     'Approved Volunteers',
                     style: TextStyle(
-                      fontSize: 24,
+                      fontSize:   26,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color:      AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
+                  const Text(
                     'Active volunteers in the system',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
                   ),
                 ],
               ),
-              // Stats badge
               StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection('volunteer_applications')
@@ -53,26 +49,20 @@ class ApprovedVolunteersPage extends StatelessWidget {
                 builder: (context, snapshot) {
                   final count = snapshot.hasData ? snapshot.data!.docs.length : 0;
                   return Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.2),
+                      color:        const Color(0xFF10B981).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
+                      border:       Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
                     ),
                     child: Row(
                       children: [
-                        const Icon(
-                          Icons.people,
-                          color: Colors.green,
-                          size: 20,
-                        ),
+                        const Icon(Icons.people, color: Color(0xFF10B981), size: 20),
                         const SizedBox(width: 8),
                         Text(
                           '$count Active',
                           style: const TextStyle(
-                            color: Colors.green,
+                            color:      Color(0xFF059669),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -86,8 +76,13 @@ class ApprovedVolunteersPage extends StatelessWidget {
 
           const SizedBox(height: 24),
 
-          // Data table
-          Card(
+          // ── Data table ──────────────────────────────────────────────────
+          Container(
+            decoration: BoxDecoration(
+              color:        AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border:       Border.all(color: AppColors.cardBorder),
+            ),
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('volunteer_applications')
@@ -108,7 +103,9 @@ class ApprovedVolunteersPage extends StatelessWidget {
                 if (!snapshot.hasData) {
                   return const Padding(
                     padding: EdgeInsets.all(48),
-                    child: Center(child: CircularProgressIndicator()),
+                    child: Center(
+                      child: CircularProgressIndicator(color: AppColors.accent),
+                    ),
                   );
                 }
 
@@ -122,14 +119,14 @@ class ApprovedVolunteersPage extends StatelessWidget {
                         children: [
                           Icon(
                             Icons.person_off_outlined,
-                            size: 64,
-                            color: Colors.white.withOpacity(0.2),
+                            size:  64,
+                            color: AppColors.textSecondary.withOpacity(0.3),
                           ),
                           const SizedBox(height: 16),
-                          Text(
+                          const Text(
                             'No approved volunteers yet',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.5),
+                              color:    AppColors.textSecondary,
                               fontSize: 16,
                             ),
                           ),
@@ -142,9 +139,11 @@ class ApprovedVolunteersPage extends StatelessWidget {
                 return SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: DataTable(
-                    headingRowHeight: 56,
-                    dataRowMinHeight: 64,
-                    dataRowMaxHeight: 64,
+                    headingRowHeight:  52,
+                    dataRowMinHeight:  60,
+                    dataRowMaxHeight:  60,
+                    headingRowColor:   WidgetStateProperty.all(AppColors.background),
+                    dividerThickness:  1,
                     columns: const [
                       DataColumn(label: Text('Volunteer')),
                       DataColumn(label: Text('Email')),
@@ -155,86 +154,81 @@ class ApprovedVolunteersPage extends StatelessWidget {
                       DataColumn(label: Text('Status')),
                     ],
                     rows: docs.map((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
-                      final name = data['fullName'] as String? ?? 'Unknown';
-                      final email = data['email'] as String? ?? '';
-                      final phone = data['phone'] as String? ?? '';
+                      final data      = doc.data() as Map<String, dynamic>;
+                      final name      = data['fullName'] as String? ?? 'Unknown';
+                      final email     = data['email']    as String? ?? '';
+                      final phone     = data['phone']    as String? ?? '';
                       final expertise = (data['expertiseAreas'] as List?)
                               ?.take(2)
                               .map((e) => e.toString().replaceAll('_', ' '))
-                              .join(', ') ??
-                          '';
+                              .join(', ') ?? '';
                       final languages = (data['languages'] as List?)
                               ?.take(2)
-                              .join(', ') ??
-                          '';
+                              .join(', ') ?? '';
                       final reviewedAt = data['reviewedAt'] as Timestamp?;
                       final dateStr = reviewedAt != null
                           ? DateFormat('MMM d, yyyy').format(reviewedAt.toDate())
                           : 'N/A';
 
-                      return DataRow(
-                        cells: [
-                          DataCell(
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 16,
-                                  backgroundColor: accent.withOpacity(0.2),
-                                  child: Text(
-                                    name.isNotEmpty ? name[0].toUpperCase() : '?',
-                                    style: TextStyle(
-                                      color: accent,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  name,
+                      return DataRow(cells: [
+                        DataCell(
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius:          16,
+                                backgroundColor: AppColors.accent.withOpacity(0.15),
+                                child: Text(
+                                  name.isNotEmpty ? name[0].toUpperCase() : '?',
                                   style: const TextStyle(
-                                    fontWeight: FontWeight.w500,
+                                    color:      AppColors.accent,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize:   12,
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-                          DataCell(Text(email)),
-                          DataCell(Text(phone)),
-                          DataCell(
-                            Container(
-                              constraints: const BoxConstraints(maxWidth: 150),
-                              child: Text(
-                                expertise,
-                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          ),
-                          DataCell(Text(languages)),
-                          DataCell(Text(dateStr)),
-                          DataCell(
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Text(
-                                'Active',
-                                style: TextStyle(
-                                  color: Colors.green,
-                                  fontSize: 12,
+                              const SizedBox(width: 12),
+                              Text(
+                                name,
+                                style: const TextStyle(
                                   fontWeight: FontWeight.w500,
+                                  color:      AppColors.textPrimary,
                                 ),
                               ),
+                            ],
+                          ),
+                        ),
+                        DataCell(Text(email, style: const TextStyle(color: AppColors.textPrimary))),
+                        DataCell(Text(phone, style: const TextStyle(color: AppColors.textPrimary))),
+                        DataCell(
+                          Container(
+                            constraints: const BoxConstraints(maxWidth: 150),
+                            child: Text(
+                              expertise,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(color: AppColors.textPrimary),
                             ),
                           ),
-                        ],
-                      );
+                        ),
+                        DataCell(Text(languages, style: const TextStyle(color: AppColors.textPrimary))),
+                        DataCell(Text(dateStr,   style: const TextStyle(color: AppColors.textSecondary))),
+                        DataCell(
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color:        const Color(0xFF10B981).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Text(
+                              'Active',
+                              style: TextStyle(
+                                color:      Color(0xFF059669),
+                                fontSize:   12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ]);
                     }).toList(),
                   ),
                 );
