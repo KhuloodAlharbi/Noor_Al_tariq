@@ -1,16 +1,32 @@
-# noor_al_tariq
 
-A new Flutter project.
 
-## Getting Started
+# Noor Al-Tariq
 
-This project is a starting point for a Flutter application.
+Noor Al-Tariq is an AI companion app for Hajj and Umrah pilgrims, built to help guide and support them throughout their journey.
 
-A few resources to get you started if this is your first Flutter project:
+## What it does
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- Answers pilgrim questions using a RAG/LLM-powered assistant (88% answer relevancy)
+- Detects emergency/SOS situations 
+- Supports 50+ languages for translation
+- Provides separate experiences for pilgrims and volunteers
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Demo
+
+[Watch the demo](./demo1.mp4)
+
+## Tech stack
+
+Built with Flutter, using a RAG (Retrieval-Augmented Generation) pipeline and an LLM for the AI assistant. Localization is handled with ARB-based Flutter i18n.
+
+## Getting started
+
+1. Clone the repo:
+```bash
+   git clone <your-repo-url-here>
+```
+2. [Add Flutter setup steps — flutter pub get, environment/API keys needed, etc.]
+3. Run on an emulator or device:
+```bash
+   flutter run
+```
