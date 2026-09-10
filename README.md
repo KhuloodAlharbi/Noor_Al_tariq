@@ -1,5 +1,3 @@
-
-
 # Noor Al-Tariq
 
 Noor Al-Tariq is an AI companion app for Hajj and Umrah pilgrims, built to help guide and support them throughout their journey.
@@ -7,7 +5,7 @@ Noor Al-Tariq is an AI companion app for Hajj and Umrah pilgrims, built to help 
 ## What it does
 
 - Answers pilgrim questions using a RAG/LLM-powered assistant (88% answer relevancy)
-- Detects emergency/SOS situations 
+- Detects emergency/SOS situations with high accuracy (99.5% SOS classifier accuracy)
 - Supports 50+ languages for translation
 - Provides separate experiences for pilgrims and volunteers
 
@@ -15,7 +13,15 @@ Noor Al-Tariq is an AI companion app for Hajj and Umrah pilgrims, built to help 
 
 [Watch the demo](./demo1.mp4)
 
-## Tech stack
+## Architecture
 
-Built with Flutter, using a RAG (Retrieval-Augmented Generation) pipeline and an LLM for the AI assistant. Localization is handled with ARB-based Flutter i18n.
+**RAG pipeline** — how pilgrim questions are answered using retrieval-augmented generation:
+
+![RAG architecture](./rag-architecture.png)
+
+
+**SOS request flow** — how an emergency message from a pilgrim gets classified and escalated:
+
+![SOS request flow](./sos-flow.png)
+
 
