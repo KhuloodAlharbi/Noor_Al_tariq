@@ -5,7 +5,7 @@ Noor Al-Tariq is an AI companion app for Hajj and Umrah pilgrims, built to help 
 ## What it does
 
 - Answers pilgrim questions using a RAG/LLM-powered assistant (88% answer relevancy)
-- Detects emergency/SOS situations with high accuracy (99.5% SOS classifier accuracy)
+- Detects emergency/SOS situations 
 - Supports 50+ languages for translation
 - Provides separate experiences for pilgrims and volunteers
 
